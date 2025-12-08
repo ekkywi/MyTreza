@@ -5,13 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.filled.LockReset
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,30 +22,41 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.trezanix.mytreza.presentation.components.CustomOutlinedTextField
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.presentation.theme.BrandBlueDark
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit,
+fun RegisterScreen(
+    onRegisterSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val state by viewModel.loginState.collectAsState()
     val context = LocalContext.current
 
+    var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+
     var isPasswordVisible by remember { mutableStateOf(false) }
+    var isConfirmPasswordVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(state) {
-        if (state is LoginState.Success) onLoginSuccess()
-        if (state is LoginState.Error) Toast.makeText(context, (state as LoginState.Error).message, Toast.LENGTH_LONG).show()
+        when (state) {
+            is LoginState.Success -> {
+                Toast.makeText(context, "Registrasi Berhasil! Silakan Login.", Toast.LENGTH_LONG).show()
+                onNavigateToLogin()
+            }
+            is LoginState.Error -> {
+                Toast.makeText(context, (state as LoginState.Error).message, Toast.LENGTH_LONG).show()
+            }
+            else -> Unit
+        }
     }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
@@ -55,7 +65,7 @@ fun LoginScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
+                    .height(220.dp)
                     .clip(RoundedCornerShape(bottomStart = 50.dp, bottomEnd = 50.dp))
                     .background(
                         brush = Brush.verticalGradient(
@@ -70,8 +80,7 @@ fun LoginScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                Spacer(modifier = Modifier.height(60.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
                 Surface(
                     shape = RoundedCornerShape(20.dp),
@@ -81,7 +90,7 @@ fun LoginScreen(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Rounded.AccountBalanceWallet,
+                            imageVector = Icons.Rounded.PersonAdd,
                             contentDescription = null,
                             tint = BrandBlue,
                             modifier = Modifier.size(40.dp)
@@ -92,18 +101,18 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = "Welcome Back!",
+                    text = "Create Account",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
                 Text(
-                    text = "Sign in to continue to MyTreza",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Bergabunglah untuk masa depan finansial yang lebih baik",
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f)
                 )
 
-                Spacer(modifier = Modifier.height(60.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -115,6 +124,17 @@ fun LoginScreen(
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+
+                        CustomOutlinedTextField(
+                            value = fullName,
+                            onValueChange = { fullName = it },
+                            label = "Full Name",
+                            icon = Icons.Default.Person,
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         CustomOutlinedTextField(
                             value = email,
@@ -133,31 +153,57 @@ fun LoginScreen(
                             label = "Password",
                             icon = Icons.Default.Lock,
                             keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done,
+                            imeAction = ImeAction.Next,
                             isPassword = true,
                             isPasswordVisible = isPasswordVisible,
                             onVisibilityChange = { isPasswordVisible = !isPasswordVisible }
                         )
 
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                            TextButton(onClick = { /* TODO */ }) {
-                                Text("Lupa Password?", color = BrandBlue, fontSize = 12.sp)
-                            }
-                        }
-
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        CustomOutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            label = "Confirm Password",
+                            icon = Icons.Default.LockReset,
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                            isPassword = true,
+                            isPasswordVisible = isConfirmPasswordVisible,
+                            onVisibilityChange = { isConfirmPasswordVisible = !isConfirmPasswordVisible }
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
                         Button(
-                            onClick = { viewModel.login(email, password) },
+                            onClick = {
+                                if (fullName.isBlank() || email.isBlank() || password.isBlank()) {
+                                    Toast.makeText(context, "Semua data wajib diisi!", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+
+                                if (password != confirmPassword) {
+                                    Toast.makeText(context, "Password tidak cocok!", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+
+                                if (password.length < 8) {
+                                    Toast.makeText(context, "Password minimal 8 karakter", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
+
+                                viewModel.register(fullName, email, password)
+                            },
                             modifier = Modifier.fillMaxWidth().height(50.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                            enabled = state !is LoginState.Loading
                         ) {
                             if (state is LoginState.Loading) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                             } else {
-                                Text("Masuk", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text("Daftar Sekarang", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -166,57 +212,15 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.weight(1f))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Belum punya akun? ", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                    Text("Sudah punya akun? ", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
                     Text(
-                        text = "Daftar",
+                        text = "Login",
                         color = BrandBlue,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { onNavigateToRegister() }
+                        modifier = Modifier.clickable { onNavigateToLogin() }
                     )
                 }
             }
         }
     }
-}
-
-@Composable
-fun CustomOutlinedTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    keyboardType: KeyboardType,
-    imeAction: ImeAction,
-    isPassword: Boolean = false,
-    isPasswordVisible: Boolean = false,
-    onVisibilityChange: () -> Unit = {}
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        leadingIcon = { Icon(imageVector = icon, contentDescription = null, tint = BrandBlue) },
-        trailingIcon = if (isPassword) {
-            {
-                IconButton(onClick = onVisibilityChange) {
-                    Icon(
-                        imageVector = if (isPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                        contentDescription = "Toggle Password",
-                        tint = Color.Gray
-                    )
-                }
-            }
-        } else null,
-        visualTransformation = if (isPassword && !isPasswordVisible) PasswordVisualTransformation() else VisualTransformation.None,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = BrandBlue,
-            focusedLabelColor = BrandBlue,
-            cursorColor = BrandBlue,
-            unfocusedBorderColor = Color.LightGray
-        )
-    )
 }

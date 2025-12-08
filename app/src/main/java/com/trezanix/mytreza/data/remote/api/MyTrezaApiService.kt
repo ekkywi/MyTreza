@@ -5,6 +5,7 @@ import com.trezanix.mytreza.data.remote.dto.BaseResponse
 import com.trezanix.mytreza.data.remote.dto.LoginRequest
 import com.trezanix.mytreza.data.remote.dto.RegisterRequest
 import com.trezanix.mytreza.data.remote.dto.DashboardDto
+import com.trezanix.mytreza.data.remote.dto.UserDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -15,7 +16,7 @@ interface MyTrezaApiService {
     suspend fun login(@Body request: LoginRequest): Response<BaseResponse<AuthData>>
 
     @POST("auth/register")
-    suspend fun register(@Body request: RegisterRequest): Response<BaseResponse<AuthData>>
+    suspend fun register(@Body request: RegisterRequest): Response<BaseResponse<UserDto>>
 
     @GET("dashboard")
     suspend fun getDashboard(): Response<BaseResponse<DashboardDto>>

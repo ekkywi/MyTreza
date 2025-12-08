@@ -17,6 +17,20 @@ class AuthViewModel @Inject constructor(
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState = _loginState.asStateFlow()
 
+    fun register(fullName: String, email: String, pass: String) {
+        viewModelScope.launch {
+            _loginState.value = LoginState.Loading
+
+            val registerResult = repository.register(fullName, email, pass)
+
+            registerResult.onSuccess {
+                _loginState.value = LoginState.Success
+            }.onFailure { error ->
+                _loginState.value = LoginState.Error(error.message ?: "Registrasi gagal")
+            }
+        }
+    }
+
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             _loginState.value = LoginState.Loading

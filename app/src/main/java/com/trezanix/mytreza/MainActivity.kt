@@ -10,8 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.trezanix.mytreza.presentation.MainScreen
 import com.trezanix.mytreza.presentation.features.auth.LoginScreen
 import com.trezanix.mytreza.presentation.features.dashboard.DashboardScreen
+import com.trezanix.mytreza.presentation.components.CustomOutlinedTextField
+import com.trezanix.mytreza.presentation.features.auth.RegisterScreen
 import dagger.hilt.android.AndroidEntryPoint
 import com.trezanix.mytreza.presentation.theme.MyTrezaTheme
 
@@ -24,20 +27,35 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val navController = rememberNavController()
 
-                    NavHost(navController = navController, startDestination = "login") {
+                    val rootNavController = rememberNavController()
+
+                    NavHost(navController = rootNavController, startDestination = "login") {
 
                         composable("login") {
                             LoginScreen(
                                 onLoginSuccess = {
-                                    navController.navigate("dashboard") {
+                                    rootNavController.navigate("main") {
                                         popUpTo("login") { inclusive = true }
                                     }
+                                },
+                                onNavigateToRegister = {
+                                    rootNavController.navigate("register")
                                 }
                             )
                         }
 
-                        composable("dashboard") {
-                            DashboardScreen()
+                        composable("register") {
+                            RegisterScreen(
+                                onRegisterSuccess = {
+                                },
+                                onNavigateToLogin = {
+                                    navController.popBackStack()
+                                }
+                            )
+                        }
+
+                        composable("main") {
+                            MainScreen()
                         }
                     }
 

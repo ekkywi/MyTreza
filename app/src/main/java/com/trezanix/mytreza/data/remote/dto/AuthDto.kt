@@ -31,6 +31,6 @@ data class AuthData(
 
 data class UserDto(
     @SerializedName("id") val id: String,
-    @SerializedName("fullName") val fullName: String,
-    @SerializedName("email") val email: String
+    @SerializedName("fullName") val fullName: String?,
+    @SerializedName("email") val email: String?
 )

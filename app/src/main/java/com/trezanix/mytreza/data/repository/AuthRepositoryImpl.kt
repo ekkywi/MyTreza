@@ -21,10 +21,14 @@ class AuthRepositoryImpl @Inject constructor(
             if (response.isSuccessful && response.body()?.success == true) {
                 val authData = response.body()?.data
 
-                authData?.accessToken?.let { tokenManager.saveToken(it) }
+                val token = authData?.accessToken
+                val name = authData?.user?.fullName ?: "User MyTreza"
+
+                if (token != null) {
+                    tokenManager.saveAuthData(token, name)
+                }
 
                 val userDomain = authData?.user?.toDomain()
-
                 if (userDomain != null) {
                     Result.success(userDomain)
                 } else {
@@ -43,12 +47,15 @@ class AuthRepositoryImpl @Inject constructor(
             val response = api.register(RegisterRequest(fullName, email, pass))
 
             if (response.isSuccessful && response.body()?.success == true) {
-                val authData = response.body()?.data
-                authData?.accessToken?.let { tokenManager.saveToken(it) }
+                val userDto = response.body()?.data
 
-                val userDomain = authData?.user?.toDomain()
-                if (userDomain != null) {
-                    Result.success(userDomain)
+                if (userDto != null) {
+                    val tempUser = User(
+                        id = userDto.id,
+                        fullName = userDto.fullName ?: fullName,
+                        email = userDto.email ?: email
+                    )
+                    Result.success(tempUser)
                 } else {
                     Result.failure(Exception("Data user kosong"))
                 }
@@ -67,8 +74,8 @@ class AuthRepositoryImpl @Inject constructor(
     private fun UserDto.toDomain(): User {
         return User(
             id = this.id,
-            fullName = this.fullName,
-            email = this.email
+            fullName = this.fullName ?: "No Name",
+            email = this.email ?: "No Email"
         )
     }
 }

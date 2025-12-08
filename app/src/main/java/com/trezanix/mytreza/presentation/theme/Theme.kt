@@ -63,6 +63,7 @@ fun MyTrezaTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = Typography,
         content = content
     )
 }
