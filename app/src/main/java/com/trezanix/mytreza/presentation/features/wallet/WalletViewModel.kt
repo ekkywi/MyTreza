@@ -29,8 +29,8 @@ class WalletViewModel @Inject constructor(
                 .onSuccess { wallets ->
                     _state.value = WalletState.Success(wallets)
                 }
-                .onFailure { e ->
-                    _state.value = WalletState.Error(e.message ?: "Gagal memuat dompet")
+                .onFailure { exception ->
+                    _state.value = WalletState.Error(exception.message ?: "Terjadi kesalahan")
                 }
         }
     }

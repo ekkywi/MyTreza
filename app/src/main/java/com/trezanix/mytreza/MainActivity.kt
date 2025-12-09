@@ -18,6 +18,7 @@ import com.trezanix.mytreza.presentation.features.auth.RegisterScreen
 import com.trezanix.mytreza.presentation.features.splash.SplashScreen
 import com.trezanix.mytreza.presentation.features.wallet.add.AddWalletScreen
 import com.trezanix.mytreza.presentation.features.wallet.detail.WalletDetailScreen
+import com.trezanix.mytreza.presentation.features.wallet.edit.EditWalletScreen
 import com.trezanix.mytreza.presentation.theme.MyTrezaTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -85,12 +86,24 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("walletId") { type = NavType.StringType })
                         ) {
                             WalletDetailScreen(
-                                onNavigateUp = { rootNavController.popBackStack() }
+                                onNavigateUp = { rootNavController.popBackStack() },
+                                onNavigateToEdit = { id ->
+                                    rootNavController.navigate("edit_wallet/$id")
+                                }
                             )
                         }
 
                         composable("add_wallet") {
                             AddWalletScreen(
+                                onNavigateUp = { rootNavController.popBackStack() }
+                            )
+                        }
+
+                        composable(
+                            route = "edit_wallet/{walletId}",
+                            arguments = listOf(navArgument("walletId") { type = NavType.StringType })
+                        ) {
+                            EditWalletScreen(
                                 onNavigateUp = { rootNavController.popBackStack() }
                             )
                         }

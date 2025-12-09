@@ -10,6 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalance
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AttachMoney
+import androidx.compose.material.icons.rounded.Apartment
+import androidx.compose.material.icons.rounded.Group
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -108,19 +111,33 @@ fun WalletScreen(
 
 @Composable
 fun WalletCard(wallet: Wallet) {
+    val defaultColor = when (wallet.type.uppercase()) {
+        "CASH" -> Color(0xFF4CAF50)
+        "EWALLET" -> Color(0xFFFF9800)
+        "BANK" -> BrandBlue
+        "SAVING" -> Color(0xFF9C27B0)
+        "FAMILY" -> Color(0xFFE91E63)
+        "ASSET" -> Color(0xFF607D8B)
+        else -> BrandBlue
+    }
+
     val baseColor = if (!wallet.color.isNullOrBlank()) {
         try {
             Color(android.graphics.Color.parseColor(wallet.color))
         } catch (e: Exception) {
-            getDefaultColorByType(wallet.type)
+            defaultColor
         }
     } else {
-        getDefaultColorByType(wallet.type)
+        defaultColor
     }
 
     val icon = when (wallet.type.uppercase()) {
         "CASH" -> Icons.Rounded.AttachMoney
         "EWALLET" -> Icons.Rounded.AccountBalanceWallet
+        "BANK" -> Icons.Rounded.AccountBalance
+        "SAVING" -> Icons.Rounded.Star
+        "FAMILY" -> Icons.Rounded.Group
+        "ASSET" -> Icons.Rounded.Apartment
         else -> Icons.Rounded.AccountBalance
     }
 

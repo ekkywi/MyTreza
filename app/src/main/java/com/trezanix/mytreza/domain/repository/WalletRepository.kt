@@ -11,4 +11,7 @@ interface WalletRepository {
     suspend fun getWalletTransactions(id: String, month: Int, year: Int): Result<List<TransactionDto>>
     suspend fun getWalletDailyStats(id: String, month: Int, year: Int): Result<List<DailyStatsDto>>
     suspend fun getWalletStats(id: String, month: Int, year: Int): Result<com.trezanix.mytreza.domain.model.WalletStats>
+    suspend fun deleteWallet(id: String): Result<Boolean>
+
+    suspend fun updateWallet(id: String, name: String, color: String, icon: String): Result<Boolean>
 }

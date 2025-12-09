@@ -8,6 +8,7 @@ import com.trezanix.mytreza.data.remote.dto.LoginRequest
 import com.trezanix.mytreza.data.remote.dto.RegisterRequest
 import com.trezanix.mytreza.data.remote.dto.DashboardDto
 import com.trezanix.mytreza.data.remote.dto.TransactionDataResponse
+import com.trezanix.mytreza.data.remote.dto.UpdateWalletRequest
 import com.trezanix.mytreza.data.remote.dto.UserDto
 import com.trezanix.mytreza.data.remote.dto.WalletDataResponse
 import com.trezanix.mytreza.data.remote.dto.WalletDto
@@ -16,6 +17,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -47,6 +49,15 @@ interface MyTrezaApiService {
 
     @POST("wallets")
     suspend fun createWallet(@Body request: CreateWalletRequest): Response<BaseResponse<WalletDto>>
+
+    @PUT("wallets/{id}")
+    suspend fun updateWallet(
+        @Path("id") id: String,
+        @Body request: UpdateWalletRequest
+    ): Response<BaseResponse<WalletDto>>
+
+    @DELETE("wallets/{id}")
+    suspend fun deleteWallet(@Path("id") id: String): Response<BaseResponse<Any>>
 
     @GET("transactions")
     suspend fun getTransactionsByWallet(

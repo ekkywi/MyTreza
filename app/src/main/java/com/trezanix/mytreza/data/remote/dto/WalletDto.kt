@@ -42,3 +42,12 @@ data class CreateWalletRequest(
     @SerializedName("icon")
     val icon: String?
 )
+
+data class UpdateWalletRequest(
+    @SerializedName("name")
+    val name: String,
+    @SerializedName("color")
+    val color: String?,
+    @SerializedName("icon")
+    val icon: String?
+)

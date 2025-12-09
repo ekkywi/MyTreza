@@ -1,7 +1,6 @@
 package com.trezanix.mytreza.presentation.features.wallet.detail
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,21 +27,39 @@ import com.trezanix.mytreza.presentation.features.wallet.WalletCard
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.presentation.util.formatRupiah
 import java.text.DateFormatSymbols
-import java.util.Calendar
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WalletDetailScreen(
     onNavigateUp: () -> Unit,
+    onNavigateToEdit: (String) -> Unit,
     viewModel: WalletDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
 
-    // State untuk Month Picker UI
     val selectedMonth by viewModel.selectedMonth.collectAsState()
     val selectedYear by viewModel.selectedYear.collectAsState()
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadData()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     var showMenu by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+
 
     Scaffold(
         topBar = {
@@ -62,11 +80,20 @@ fun WalletDetailScreen(
                     ) {
                         DropdownMenuItem(
                             text = { Text("Edit Dompet") },
-                            onClick = { showMenu = false }
+                            onClick = {
+                                showMenu = false
+                                if (state is WalletDetailViewModel.DetailState.Success) {
+                                    val id = (state as WalletDetailViewModel.DetailState.Success).wallet.id
+                                    onNavigateToEdit(id)
+                                }
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Hapus Dompet", color = Color.Red) },
-                            onClick = { showMenu = false }
+                            onClick = {
+                                showMenu = false
+                                showDeleteDialog = true
+                            }
                         )
                     }
                 },
@@ -77,7 +104,9 @@ fun WalletDetailScreen(
         },
         containerColor = Color(0xFFF5F7FA)
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Box(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
             when (val s = state) {
                 is WalletDetailViewModel.DetailState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -90,23 +119,19 @@ fun WalletDetailScreen(
                         contentPadding = PaddingValues(24.dp),
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // 1. KARTU DOMPET
                         item { WalletCard(wallet = s.wallet) }
 
-                        // 2. --- FITUR BARU: MONTH PICKER ---
                         item {
                             MonthPicker(
                                 month = selectedMonth,
                                 year = selectedYear,
                                 onPrev = {
-                                    // Logic mundur bulan
                                     var m = selectedMonth - 1
                                     var y = selectedYear
                                     if (m < 1) { m = 12; y-- }
                                     viewModel.changeMonth(m, y)
                                 },
                                 onNext = {
-                                    // Logic maju bulan
                                     var m = selectedMonth + 1
                                     var y = selectedYear
                                     if (m > 12) { m = 1; y++ }
@@ -115,12 +140,10 @@ fun WalletDetailScreen(
                             )
                         }
 
-                        // 3. --- MINI DASHBOARD (STATS) ---
                         item {
                             WalletMonthlySummary(income = s.stats.income, expense = s.stats.expense)
                         }
 
-                        // 4. JUDUL RIWAYAT
                         item {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -130,7 +153,6 @@ fun WalletDetailScreen(
                             )
                         }
 
-                        // 5. LIST TRANSAKSI
                         if (s.transactions.isEmpty()) {
                             item {
                                 Text(
@@ -150,67 +172,62 @@ fun WalletDetailScreen(
             }
         }
     }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text(text = "Hapus Dompet?") },
+            text = {
+                Text("Tindakan ini tidak dapat dibatalkan. Riwayat transaksi mungkin akan terpengaruh.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        viewModel.deleteWallet(onSuccess = {
+                            onNavigateUp()
+                        })
+                    }
+                ) {
+                    Text("Hapus", color = Color.Red, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Batal", color = BrandBlue)
+                }
+            },
+            containerColor = Color.White,
+            titleContentColor = Color.Black,
+            textContentColor = Color.Gray
+        )
+    }
 }
 
-// --- KOMPONEN BARU: MONTH PICKER ---
 @Composable
-fun MonthPicker(
-    month: Int,
-    year: Int,
-    onPrev: () -> Unit,
-    onNext: () -> Unit
-) {
-    // Ubah angka bulan (1-12) jadi nama (Januari, dst)
+fun MonthPicker(month: Int, year: Int, onPrev: () -> Unit, onNext: () -> Unit) {
     val monthName = DateFormatSymbols().months[month - 1]
-
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPrev) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null)
-        }
-
-        Text(
-            text = "$monthName $year",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = BrandBlue
-        )
-
-        IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null)
-        }
+        IconButton(onClick = onPrev) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null) }
+        Text(text = "$monthName $year", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = BrandBlue)
+        IconButton(onClick = onNext) { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null) }
     }
 }
 
-// --- KOMPONEN STATS ---
 @Composable
 fun WalletMonthlySummary(income: Double, expense: Double) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        SummaryCard(
-            title = "Pemasukan",
-            amount = income,
-            color = Color(0xFF4CAF50),
-            icon = Icons.Default.ArrowDownward,
-            modifier = Modifier.weight(1f)
-        )
-        SummaryCard(
-            title = "Pengeluaran",
-            amount = expense,
-            color = Color.Red,
-            icon = Icons.Default.ArrowUpward,
-            modifier = Modifier.weight(1f)
-        )
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        SummaryCard("Pemasukan", income, Color(0xFF4CAF50), Icons.Default.ArrowDownward, Modifier.weight(1f))
+        SummaryCard("Pengeluaran", expense, Color.Red, Icons.Default.ArrowUpward, Modifier.weight(1f))
     }
 }
 
 @Composable
-fun SummaryCard(title: String, amount: Double, color: Color, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier) {
+fun SummaryCard(title: String, amount: Double, color: Color, icon: ImageVector, modifier: Modifier = Modifier) {
     Card(colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp), modifier = modifier) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

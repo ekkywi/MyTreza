@@ -4,6 +4,7 @@ import com.trezanix.mytreza.data.remote.api.MyTrezaApiService
 import com.trezanix.mytreza.data.remote.dto.CreateWalletRequest
 import com.trezanix.mytreza.data.remote.dto.DailyStatsDto
 import com.trezanix.mytreza.data.remote.dto.TransactionDto
+import com.trezanix.mytreza.data.remote.dto.UpdateWalletRequest
 import com.trezanix.mytreza.domain.model.Wallet
 import com.trezanix.mytreza.domain.repository.WalletRepository
 import javax.inject.Inject
@@ -36,6 +37,20 @@ class WalletRepositoryImpl @Inject constructor(
                 val data = response.body()?.data
                 if (data != null) Result.success(data.toDomain())
                 else Result.failure(Exception("Data kosong"))
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateWallet(id: String, name: String, color: String, icon: String): Result<Boolean> {
+        return try {
+            val request = UpdateWalletRequest(name, color, icon)
+            val response = api.updateWallet(id, request)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(true)
             } else {
                 Result.failure(Exception(response.message()))
             }
@@ -109,4 +124,16 @@ class WalletRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteWallet(id: String): Result<Boolean> {
+        return try {
+            val response = api.deleteWallet(id)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

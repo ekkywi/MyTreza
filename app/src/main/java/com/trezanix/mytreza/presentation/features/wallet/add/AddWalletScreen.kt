@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.trezanix.mytreza.domain.model.Wallet
 import com.trezanix.mytreza.presentation.features.wallet.WalletCard
 import com.trezanix.mytreza.presentation.theme.BrandBlue
+import com.trezanix.mytreza.presentation.util.mapTypeLabel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,10 +144,19 @@ fun AddWalletScreen(
 
                     Text("Tipe Dompet", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        WalletTypeChip("Bank", type == "BANK") { viewModel.walletType.value = "BANK" }
-                        WalletTypeChip("E-Wallet", type == "EWALLET") { viewModel.walletType.value = "EWALLET" }
-                        WalletTypeChip("Cash", type == "CASH") { viewModel.walletType.value = "CASH" }
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val types = listOf("BANK", "EWALLET", "CASH", "SAVING", "FAMILY", "ASSET")
+
+                        items(types) { typeItem ->
+                            WalletTypeChip(
+                                label = mapTypeLabel(typeItem),
+                                selected = type == typeItem,
+                                onClick = { viewModel.walletType.value = typeItem }
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
