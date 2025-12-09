@@ -7,6 +7,7 @@ data class WalletDto(
     val id: String,
     val name: String,
     val type: String,
+    @SerializedName("balance")
     val balance: Double,
     val color: String? = null,
     val icon: String? = null
@@ -17,7 +18,9 @@ data class WalletDto(
             name = name,
             type = type,
             balance = balance,
-            accountNumber = "-"
+            accountNumber = "-",
+            color = color,
+            icon = icon
         )
     }
 }
@@ -28,7 +31,14 @@ data class WalletDataResponse(
 )
 
 data class CreateWalletRequest(
+    @SerializedName("name")
     val name: String,
+    @SerializedName("type")
     val type: String,
-    val balance: Double
+    @SerializedName("balance")
+    val balance: Double,
+    @SerializedName("color")
+    val color: String?,
+    @SerializedName("icon")
+    val icon: String?
 )

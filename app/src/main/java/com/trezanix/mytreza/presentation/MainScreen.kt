@@ -40,7 +40,8 @@ import com.trezanix.mytreza.presentation.theme.BrandBlue
 @Composable
 fun MainScreen(
     onNavigateToLogin: () -> Unit,
-    onNavigateToWalletDetail: (String) -> Unit
+    onNavigateToWalletDetail: (String) -> Unit,
+    onNavigateToAddWallet: () -> Unit
 ) {
     val navController = rememberNavController()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -161,7 +162,14 @@ fun MainScreen(
                 sheetState = sheetState,
                 containerColor = Color.White
             ) {
-                AddActionSheetContent { showBottomSheet = false }
+                AddActionSheetContent { action ->
+                    showBottomSheet = false
+                    when (action) {
+                        "wallet" -> onNavigateToAddWallet()
+                        "transaction" -> { /* Nanti buat transaksi */ }
+                        "budget" -> { /* Nanti buat budget */ }
+                    }
+                }
             }
         }
     }

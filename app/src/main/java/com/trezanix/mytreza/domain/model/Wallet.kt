@@ -5,5 +5,7 @@ data class Wallet(
     val name: String,
     val type: String,
     val balance: Double,
-    val accountNumber: String
+    val accountNumber: String,
+    val color: String? = null,
+    val icon: String? = null
 )

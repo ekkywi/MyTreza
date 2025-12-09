@@ -28,9 +28,9 @@ class WalletRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createWallet(name: String, type: String, balance: Double): Result<Wallet> {
+    override suspend fun createWallet(name: String, type: String, balance: Double, color: String, icon: String): Result<Wallet> {
         return try {
-            val request = CreateWalletRequest(name, type, balance)
+            val request = CreateWalletRequest(name, type, balance, color, icon)
             val response = api.createWallet(request)
             if (response.isSuccessful && response.body()?.success == true) {
                 val data = response.body()?.data
