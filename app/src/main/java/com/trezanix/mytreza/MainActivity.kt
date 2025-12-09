@@ -46,10 +46,11 @@ class MainActivity : ComponentActivity() {
 
                         composable("register") {
                             RegisterScreen(
-                                onRegisterSuccess = {
-                                },
+                                onRegisterSuccess = { },
                                 onNavigateToLogin = {
-                                    navController.popBackStack()
+                                    rootNavController.navigate("login") {
+                                        popUpTo("register") { inclusive = true }
+                                    }
                                 }
                             )
                         }
