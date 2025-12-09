@@ -12,9 +12,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.trezanix.mytreza.presentation.MainScreen
 import com.trezanix.mytreza.presentation.features.auth.LoginScreen
-import com.trezanix.mytreza.presentation.features.dashboard.DashboardScreen
-import com.trezanix.mytreza.presentation.components.CustomOutlinedTextField
 import com.trezanix.mytreza.presentation.features.auth.RegisterScreen
+import com.trezanix.mytreza.presentation.features.splash.SplashScreen
 import dagger.hilt.android.AndroidEntryPoint
 import com.trezanix.mytreza.presentation.theme.MyTrezaTheme
 
@@ -29,7 +28,17 @@ class MainActivity : ComponentActivity() {
 
                     val rootNavController = rememberNavController()
 
-                    NavHost(navController = rootNavController, startDestination = "login") {
+                    NavHost(navController = rootNavController, startDestination = "splash") {
+
+                        composable("splash") {
+                            SplashScreen(
+                                onNavigateTo = { destination ->
+                                    rootNavController.navigate(destination) {
+                                        popUpTo("splash") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
 
                         composable("login") {
                             LoginScreen(
@@ -56,7 +65,13 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable("main") {
-                            MainScreen()
+                            MainScreen(
+                                onNavigateToLogin = {
+                                    rootNavController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            )
                         }
                     }
 

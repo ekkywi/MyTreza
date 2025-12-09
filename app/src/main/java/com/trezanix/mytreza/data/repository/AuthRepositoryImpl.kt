@@ -20,22 +20,24 @@ class AuthRepositoryImpl @Inject constructor(
 
             if (response.isSuccessful && response.body()?.success == true) {
                 val authData = response.body()?.data
-
                 val token = authData?.accessToken
                 val name = authData?.user?.fullName ?: "User MyTreza"
+                val userEmail = authData?.user?.email ?: ""
 
                 if (token != null) {
-                    tokenManager.saveAuthData(token, name)
+                    tokenManager.saveAuthData(token, name, email)
                 }
 
                 val userDomain = authData?.user?.toDomain()
-                if (userDomain != null) {
-                    Result.success(userDomain)
-                } else {
-                    Result.failure(Exception("Data user kosong"))
-                }
+                if (userDomain != null) Result.success(userDomain) else Result.failure(Exception("Data kosong"))
+
             } else {
-                Result.failure(Exception(response.body()?.message ?: "Login gagal"))
+                val errorMsg = if (response.code() == 429) {
+                    "Terlalu banyak percobaan. Tunggu 5 menit."
+                } else {
+                    response.body()?.message ?: "Login gagal (Code: ${response.code()})"
+                }
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -69,6 +71,22 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun logout() {
         tokenManager.clearToken()
+    }
+
+    override suspend fun deleteAccount(): Result<Boolean> {
+        return try {
+            val response = api.deleteAccount()
+
+            if (response.isSuccessful) {
+                tokenManager.clearAuthData()
+                Result.success(true)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Gagal menghapus akun"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     private fun UserDto.toDomain(): User {

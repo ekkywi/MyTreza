@@ -3,6 +3,8 @@ package com.trezanix.mytreza.core.di
 import com.trezanix.mytreza.data.local.TokenManager
 import com.trezanix.mytreza.data.remote.AuthInterceptor
 import com.trezanix.mytreza.data.remote.api.MyTrezaApiService
+import com.trezanix.mytreza.data.repository.WalletRepositoryImpl
+import com.trezanix.mytreza.domain.repository.WalletRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,5 +39,11 @@ object AppModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(MyTrezaApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideWalletRepository(api: MyTrezaApiService): WalletRepository {
+        return WalletRepositoryImpl(api)
     }
 }

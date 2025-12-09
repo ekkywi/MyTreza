@@ -37,8 +37,8 @@ import com.trezanix.mytreza.presentation.theme.AccentGreen
 import com.trezanix.mytreza.presentation.theme.AccentRed
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.presentation.theme.BrandBlueDark
-import java.text.NumberFormat
-import java.util.Locale
+import com.trezanix.mytreza.presentation.util.formatRupiah
+import com.trezanix.mytreza.presentation.util.getGreetingMessage
 
 @Composable
 fun DashboardScreen(
@@ -131,7 +131,7 @@ fun DashboardHeader(data: DashboardData) {
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "Selamat Datang,",
+                            text = getGreetingMessage(),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.White.copy(alpha = 0.8f)
                         )
@@ -347,10 +347,4 @@ fun SpendingAnalysisCard(data: DashboardData) {
             }
         }
     }
-}
-
-fun formatRupiah(amount: Double): String {
-    val format = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
-    format.maximumFractionDigits = 0
-    return format.format(amount)
 }

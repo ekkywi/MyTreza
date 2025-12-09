@@ -31,14 +31,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.trezanix.mytreza.presentation.features.dashboard.DashboardScreen
 import com.trezanix.mytreza.presentation.features.placeholder.HistoryScreen
-import com.trezanix.mytreza.presentation.features.placeholder.ProfileScreen
-import com.trezanix.mytreza.presentation.features.placeholder.WalletScreen
+import com.trezanix.mytreza.presentation.features.profile.ProfileScreen
+import com.trezanix.mytreza.presentation.features.wallet.WalletScreen
 import com.trezanix.mytreza.presentation.navigation.BottomNavItem
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    onNavigateToLogin: () -> Unit
+) {
     val navController = rememberNavController()
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -138,9 +140,14 @@ fun MainScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.Home.route) { DashboardScreen() }
+
             composable(BottomNavItem.History.route) { HistoryScreen() }
+
             composable(BottomNavItem.Wallet.route) { WalletScreen() }
-            composable(BottomNavItem.Profile.route) { ProfileScreen() }
+
+            composable(BottomNavItem.Profile.route) {
+                ProfileScreen(onLogout = onNavigateToLogin)
+            }
         }
 
         if (showBottomSheet) {

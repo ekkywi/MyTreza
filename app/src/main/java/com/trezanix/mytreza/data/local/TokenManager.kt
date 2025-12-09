@@ -15,6 +15,7 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
     companion object {
         private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
         private val USER_NAME_KEY = stringPreferencesKey("user_full_name")
+        private val USER_EMAIL_KEY = stringPreferencesKey("user_email")
     }
 
     val accessToken: Flow<String?> = context.dataStore.data.map { prefs ->
@@ -25,10 +26,15 @@ class TokenManager @Inject constructor(@ApplicationContext private val context: 
         prefs[USER_NAME_KEY]
     }
 
-    suspend fun saveAuthData(token: String, name: String) {
+    val userEmail: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[USER_EMAIL_KEY]
+    }
+
+    suspend fun saveAuthData(token: String, name: String, email: String) {
         context.dataStore.edit { prefs ->
             prefs[ACCESS_TOKEN_KEY] = token
             prefs[USER_NAME_KEY] = name
+            prefs[USER_EMAIL_KEY] = email
         }
     }
 
