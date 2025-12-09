@@ -41,6 +41,9 @@ android {
     buildFeatures {
         compose = true
     }
+    composeOptions {
+        // kotlinCompilerExtensionVersion is not required for Kotlin 2.0+
+    }
 }
 
 dependencies {

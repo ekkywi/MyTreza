@@ -1,0 +1,91 @@
+package com.trezanix.mytreza.presentation.features.wallet.detail
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.trezanix.mytreza.data.remote.dto.DailyStatsDto
+import com.trezanix.mytreza.data.remote.dto.TransactionDto
+import com.trezanix.mytreza.domain.model.Wallet
+import com.trezanix.mytreza.domain.repository.WalletRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class WalletDetailViewModel @Inject constructor(
+    private val repository: WalletRepository,
+    savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val walletId: String = checkNotNull(savedStateHandle["walletId"])
+
+    // STATE PERIODE (Default: Bulan Ini)
+    private val calendar = java.util.Calendar.getInstance()
+    private val _selectedMonth = MutableStateFlow(calendar.get(java.util.Calendar.MONTH) + 1) // 1-12
+    private val _selectedYear = MutableStateFlow(calendar.get(java.util.Calendar.YEAR))
+
+    // Expose ke UI untuk Month Picker
+    val selectedMonth = _selectedMonth.asStateFlow()
+    val selectedYear = _selectedYear.asStateFlow()
+
+    private val _state = MutableStateFlow<DetailState>(DetailState.Loading)
+    val state = _state.asStateFlow()
+
+    init {
+        loadData()
+    }
+
+    // Fungsi ganti bulan (Dipanggil dari UI Month Picker)
+    fun changeMonth(month: Int, year: Int) {
+        _selectedMonth.value = month
+        _selectedYear.value = year
+        loadData() // Reload semua data
+    }
+
+    fun loadData() {
+        viewModelScope.launch {
+            _state.value = DetailState.Loading
+
+            val m = _selectedMonth.value
+            val y = _selectedYear.value
+
+            // 1. Ambil Detail Dompet (Info statis)
+            val walletResult = repository.getWalletDetail(walletId)
+
+            if (walletResult.isSuccess) {
+                val wallet = walletResult.getOrNull()!!
+
+                // 2. Ambil Transaksi (Filter Bulan)
+                val trxResult = repository.getWalletTransactions(walletId, m, y)
+                val transactions = trxResult.getOrDefault(emptyList())
+
+                // 3. Ambil Stats Bulanan
+                val statsResult = repository.getWalletStats(walletId, m, y)
+                val stats = statsResult.getOrDefault(
+                    com.trezanix.mytreza.domain.model.WalletStats(0.0, 0.0, 0.0)
+                )
+
+                // 4. Ambil Daily Stats (Untuk Grafik)
+                val dailyResult = repository.getWalletDailyStats(walletId, m, y)
+                val dailyStats = dailyResult.getOrDefault(emptyList())
+
+                _state.value = DetailState.Success(wallet, transactions, stats, dailyStats)
+            } else {
+                _state.value = DetailState.Error(walletResult.exceptionOrNull()?.message ?: "Gagal memuat")
+            }
+        }
+    }
+
+    sealed class DetailState {
+        object Loading : DetailState()
+        data class Success(
+            val wallet: com.trezanix.mytreza.domain.model.Wallet,
+            val transactions: List<TransactionDto>,
+            val stats: com.trezanix.mytreza.domain.model.WalletStats,
+            val dailyStats: List<DailyStatsDto> // <--- Data Baru untuk Chart
+        ) : DetailState()
+        data class Error(val message: String) : DetailState()
+    }
+}

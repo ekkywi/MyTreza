@@ -7,15 +7,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.trezanix.mytreza.presentation.MainScreen
 import com.trezanix.mytreza.presentation.features.auth.LoginScreen
 import com.trezanix.mytreza.presentation.features.auth.RegisterScreen
 import com.trezanix.mytreza.presentation.features.splash.SplashScreen
-import dagger.hilt.android.AndroidEntryPoint
+import com.trezanix.mytreza.presentation.features.wallet.detail.WalletDetailScreen
 import com.trezanix.mytreza.presentation.theme.MyTrezaTheme
+import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -24,16 +27,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyTrezaTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    val navController = rememberNavController()
-
                     val rootNavController = rememberNavController()
 
                     NavHost(navController = rootNavController, startDestination = "splash") {
 
                         composable("splash") {
                             SplashScreen(
-                                onNavigateTo = { destination ->
-                                    rootNavController.navigate(destination) {
+                                onNavigateTo = { dest ->
+                                    rootNavController.navigate(dest) {
                                         popUpTo("splash") { inclusive = true }
                                     }
                                 }
@@ -47,9 +48,7 @@ class MainActivity : ComponentActivity() {
                                         popUpTo("login") { inclusive = true }
                                     }
                                 },
-                                onNavigateToRegister = {
-                                    rootNavController.navigate("register")
-                                }
+                                onNavigateToRegister = { rootNavController.navigate("register") }
                             )
                         }
 
@@ -70,11 +69,22 @@ class MainActivity : ComponentActivity() {
                                     rootNavController.navigate("login") {
                                         popUpTo(0) { inclusive = true }
                                     }
+                                },
+                                onNavigateToWalletDetail = { walletId ->
+                                    rootNavController.navigate("wallet_detail/$walletId")
                                 }
                             )
                         }
-                    }
 
+                        composable(
+                            route = "wallet_detail/{walletId}",
+                            arguments = listOf(navArgument("walletId") { type = NavType.StringType })
+                        ) {
+                            WalletDetailScreen(
+                                onNavigateUp = { rootNavController.popBackStack() }
+                            )
+                        }
+                    }
                 }
             }
         }

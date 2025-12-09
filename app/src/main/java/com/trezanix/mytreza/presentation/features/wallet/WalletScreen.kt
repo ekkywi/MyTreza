@@ -1,6 +1,7 @@
 package com.trezanix.mytreza.presentation.features.wallet
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,7 +30,8 @@ import com.trezanix.mytreza.presentation.util.formatRupiah
 
 @Composable
 fun WalletScreen(
-    viewModel: WalletViewModel = hiltViewModel()
+    viewModel: WalletViewModel = hiltViewModel(),
+    onNavigateToDetail: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -77,7 +79,9 @@ fun WalletScreen(
                         contentPadding = PaddingValues(bottom = 100.dp)
                     ) {
                         items(s.wallets) { wallet ->
-                            WalletCard(wallet)
+                            Box(modifier = Modifier.clickable { onNavigateToDetail(wallet.id) }) {
+                                WalletCard(wallet)
+                            }
                         }
                     }
                 }
