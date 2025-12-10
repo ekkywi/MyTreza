@@ -16,6 +16,7 @@ import com.trezanix.mytreza.presentation.MainScreen
 import com.trezanix.mytreza.presentation.features.auth.LoginScreen
 import com.trezanix.mytreza.presentation.features.auth.RegisterScreen
 import com.trezanix.mytreza.presentation.features.splash.SplashScreen
+import com.trezanix.mytreza.presentation.features.transaction.add.AddTransactionScreen
 import com.trezanix.mytreza.presentation.features.wallet.add.AddWalletScreen
 import com.trezanix.mytreza.presentation.features.wallet.detail.WalletDetailScreen
 import com.trezanix.mytreza.presentation.features.wallet.edit.EditWalletScreen
@@ -77,6 +78,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNavigateToAddWallet = {
                                     rootNavController.navigate("add_wallet")
+                                },
+                                onNavigateToAddTransaction = {
+                                    rootNavController.navigate("add_transaction")
                                 }
                             )
                         }
@@ -104,6 +108,12 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("walletId") { type = NavType.StringType })
                         ) {
                             EditWalletScreen(
+                                onNavigateUp = { rootNavController.popBackStack() }
+                            )
+                        }
+
+                        composable("add_transaction") {
+                            AddTransactionScreen(
                                 onNavigateUp = { rootNavController.popBackStack() }
                             )
                         }

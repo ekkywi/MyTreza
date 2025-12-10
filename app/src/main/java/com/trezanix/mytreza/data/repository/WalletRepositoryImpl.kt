@@ -1,6 +1,8 @@
 package com.trezanix.mytreza.data.repository
 
 import com.trezanix.mytreza.data.remote.api.MyTrezaApiService
+import com.trezanix.mytreza.data.remote.dto.CreateTransactionRequest
+import com.trezanix.mytreza.data.remote.dto.CreateTransferRequest
 import com.trezanix.mytreza.data.remote.dto.CreateWalletRequest
 import com.trezanix.mytreza.data.remote.dto.DailyStatsDto
 import com.trezanix.mytreza.data.remote.dto.TransactionDto
@@ -127,6 +129,62 @@ class WalletRepositoryImpl @Inject constructor(
     override suspend fun deleteWallet(id: String): Result<Boolean> {
         return try {
             val response = api.deleteWallet(id)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createTransaction(
+        walletId: String,
+        categoryId: String?,
+        type: String,
+        amount: Double,
+        description: String,
+        date: String
+    ): Result<Boolean> {
+        return try {
+            val request = CreateTransactionRequest(
+                walletId = walletId,
+                categoryId = categoryId,
+                type = type,
+                amount = amount,
+                description = description,
+                date = date
+            )
+            val response = api.createTransaction(request)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(true)
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createTransfer(
+        fromWalletId: String,
+        toWalletId: String,
+        amount: Double,
+        adminFee: Double,
+        description: String,
+        date: String
+    ): Result<Boolean> {
+        return try {
+            val request = CreateTransferRequest(
+                fromWalletId = fromWalletId,
+                toWalletId = toWalletId,
+                amount = amount,
+                adminFee = adminFee,
+                description = description,
+                date = date
+            )
+            val response = api.createTransfer(request)
             if (response.isSuccessful && response.body()?.success == true) {
                 Result.success(true)
             } else {

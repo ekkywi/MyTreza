@@ -2,12 +2,15 @@ package com.trezanix.mytreza.data.remote.api
 
 import com.trezanix.mytreza.data.remote.dto.AuthData
 import com.trezanix.mytreza.data.remote.dto.BaseResponse
+import com.trezanix.mytreza.data.remote.dto.CreateTransactionRequest
+import com.trezanix.mytreza.data.remote.dto.CreateTransferRequest
 import com.trezanix.mytreza.data.remote.dto.CreateWalletRequest
 import com.trezanix.mytreza.data.remote.dto.DailyStatsDto
 import com.trezanix.mytreza.data.remote.dto.LoginRequest
 import com.trezanix.mytreza.data.remote.dto.RegisterRequest
 import com.trezanix.mytreza.data.remote.dto.DashboardDto
 import com.trezanix.mytreza.data.remote.dto.TransactionDataResponse
+import com.trezanix.mytreza.data.remote.dto.TransactionDto
 import com.trezanix.mytreza.data.remote.dto.UpdateWalletRequest
 import com.trezanix.mytreza.data.remote.dto.UserDto
 import com.trezanix.mytreza.data.remote.dto.WalletDataResponse
@@ -66,4 +69,14 @@ interface MyTrezaApiService {
         @Query("year") year: Int,
         @Query("limit") limit: Int = 20
     ): Response<BaseResponse<TransactionDataResponse>>
+
+    @POST("transactions")
+    suspend fun createTransaction(
+        @Body request: CreateTransactionRequest
+    ): Response<BaseResponse<TransactionDto>>
+
+    @POST("transfers")
+    suspend fun createTransfer(
+        @Body request: CreateTransferRequest
+    ): Response<BaseResponse<Any>>
 }
