@@ -2,121 +2,153 @@ package com.trezanix.mytreza.presentation.features.transaction.add
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.trezanix.mytreza.domain.model.Category
 import com.trezanix.mytreza.domain.model.Wallet
+import com.trezanix.mytreza.domain.repository.CategoryRepository
 import com.trezanix.mytreza.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(
-    private val repository: WalletRepository
+    private val walletRepository: WalletRepository,
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
-    var amount = MutableStateFlow("")
-    var description = MutableStateFlow("")
-    var transactionType = MutableStateFlow("EXPENSE")
-    var selectedDate = MutableStateFlow(Date())
-    var selectedWallet = MutableStateFlow<Wallet?>(null)
-    var selectedCategory = MutableStateFlow<String?>(null)
-    var sourceWallet = MutableStateFlow<Wallet?>(null)
-    var targetWallet = MutableStateFlow<Wallet?>(null)
-    var adminFee = MutableStateFlow("")
+    // --- STATE VARIABLES (Flow) ---
+    val amount = MutableStateFlow("")
+    val note = MutableStateFlow("")
+    val date = MutableStateFlow(Date())
 
-    private val _uiState = MutableStateFlow<AddTransactionState>(AddTransactionState.Idle)
-    val uiState = _uiState.asStateFlow()
+    // Tipe Transaksi: INCOME, EXPENSE, TRANSFER
+    val transactionType = MutableStateFlow("EXPENSE")
 
+    // Pilihan User
+    val selectedWalletId = MutableStateFlow<String?>(null)
+    val selectedCategoryId = MutableStateFlow<String?>(null)
+
+    // Khusus Transfer
+    val selectedSourceWalletId = MutableStateFlow<String?>(null)
+    val selectedTargetWalletId = MutableStateFlow<String?>(null)
+    val adminFee = MutableStateFlow("")
+
+    // Data List untuk Dropdown
     private val _wallets = MutableStateFlow<List<Wallet>>(emptyList())
     val wallets = _wallets.asStateFlow()
 
+    private val _categories = MutableStateFlow<List<Category>>(emptyList())
+    val categories = _categories.asStateFlow()
+
+    // Status UI (Loading/Success/Error)
+    private val _uiState = MutableStateFlow<AddTransactionUiState>(AddTransactionUiState.Idle)
+    val uiState = _uiState.asStateFlow()
+
     init {
-        loadWallets()
+        loadData()
     }
 
-    private fun loadWallets() {
+    private fun loadData() {
         viewModelScope.launch {
-            repository.getWallets()
-                .onSuccess { list ->
-                    _wallets.value = list
-                    if (list.isNotEmpty()) {
-                        selectedWallet.value = list[0]
-                        sourceWallet.value = list[0]
-                        if (list.size > 1) targetWallet.value = list[1]
-                    }
-                }
-                .onFailure {
-                    _uiState.value = AddTransactionState.Error("Gagal memuat dompet")
-                }
+            // Load Wallets
+            walletRepository.getWallets().onSuccess { _wallets.value = it }
+            // Load Categories
+            categoryRepository.getCategories().onSuccess { _categories.value = it }
         }
     }
 
+    // --- FUNGSI SIMPAN TRANSAKSI (INCOME / EXPENSE) ---
     fun saveTransaction() {
-        val type = transactionType.value
-        val nominal = amount.value.toDoubleOrNull() ?: 0.0
-        val desc = description.value
-        val dateStr = selectedDate.value.toInstant().toString()
+        val currentAmount = amount.value.toDoubleOrNull()
+        val currentWalletId = selectedWalletId.value
+        val currentType = transactionType.value
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date.value)
+        val currentNote = note.value
+        val currentCategoryId = selectedCategoryId.value
 
-        if (nominal <= 0) {
-            _uiState.value = AddTransactionState.Error("Nominal harus lebih dari 0")
+        if (currentAmount == null || currentAmount <= 0) {
+            _uiState.value = AddTransactionUiState.Error("Jumlah harus lebih dari 0")
+            return
+        }
+        if (currentWalletId == null) {
+            _uiState.value = AddTransactionUiState.Error("Pilih dompet terlebih dahulu")
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = AddTransactionState.Loading
+            _uiState.value = AddTransactionUiState.Loading
 
-            val result = if (type == "TRANSFER") {
-                val from = sourceWallet.value
-                val to = targetWallet.value
-                val fee = adminFee.value.toDoubleOrNull() ?: 0.0
-
-                if (from == null || to == null) {
-                    Result.failure(Exception("Pilih dompet asal dan tujuan"))
-                } else if (from.id == to.id) {
-                    Result.failure(Exception("Dompet asal dan tujuan tidak boleh sama"))
-                } else {
-                    repository.createTransfer(
-                        fromWalletId = from.id,
-                        toWalletId = to.id,
-                        amount = nominal,
-                        adminFee = fee,
-                        description = desc,
-                        date = dateStr
-                    )
-                }
-            } else {
-                val wallet = selectedWallet.value
-                val categoryId = selectedCategory.value
-
-                if (wallet == null) {
-                    Result.failure(Exception("Pilih dompet terlebih dahulu"))
-                } else {
-                    repository.createTransaction(
-                        walletId = wallet.id,
-                        categoryId = categoryId,
-                        type = type,
-                        amount = nominal,
-                        description = desc,
-                        date = dateStr
-                    )
-                }
+            // Panggil Repository (Parameter sudah sesuai)
+            walletRepository.createTransaction(
+                walletId = currentWalletId,
+                amount = currentAmount,
+                type = currentType,
+                date = currentDate,
+                description = currentNote,
+                categoryId = currentCategoryId
+            ).onSuccess {
+                _uiState.value = AddTransactionUiState.Success
+            }.onFailure { e ->
+                _uiState.value = AddTransactionUiState.Error(e.message ?: "Gagal menyimpan transaksi")
             }
-
-            result.onSuccess {
-                _uiState.value = AddTransactionState.Success
-            }
-                .onFailure { e ->
-                    _uiState.value = AddTransactionState.Error(e.message ?: "Gagal menyimpan")
-                }
         }
     }
 
-    sealed class AddTransactionState {
-        object Idle : AddTransactionState()
-        object Loading : AddTransactionState()
-        object Success : AddTransactionState()
-        data class Error(val message: String) : AddTransactionState()
+    // --- FUNGSI SIMPAN TRANSFER ---
+    fun saveTransfer() {
+        val currentAmount = amount.value.toDoubleOrNull()
+        val sourceId = selectedSourceWalletId.value
+        val targetId = selectedTargetWalletId.value
+        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date.value)
+        val currentNote = note.value
+        val currentAdminFee = adminFee.value.toDoubleOrNull() ?: 0.0
+
+        if (currentAmount == null || currentAmount <= 0) {
+            _uiState.value = AddTransactionUiState.Error("Jumlah harus lebih dari 0")
+            return
+        }
+        if (sourceId == null || targetId == null) {
+            _uiState.value = AddTransactionUiState.Error("Pilih dompet asal dan tujuan")
+            return
+        }
+        if (sourceId == targetId) {
+            _uiState.value = AddTransactionUiState.Error("Dompet asal dan tujuan tidak boleh sama")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = AddTransactionUiState.Loading
+
+            // Panggil Repository (Parameter sudah sesuai)
+            walletRepository.createTransfer(
+                sourceWalletId = sourceId,
+                targetWalletId = targetId,
+                amount = currentAmount,
+                date = currentDate,
+                description = currentNote,
+                adminFee = currentAdminFee
+            ).onSuccess {
+                _uiState.value = AddTransactionUiState.Success
+            }.onFailure { e ->
+                _uiState.value = AddTransactionUiState.Error(e.message ?: "Gagal melakukan transfer")
+            }
+        }
     }
+
+    fun resetState() {
+        _uiState.value = AddTransactionUiState.Idle
+    }
+}
+
+// Sealed Class untuk Status UI
+sealed class AddTransactionUiState {
+    object Idle : AddTransactionUiState()
+    object Loading : AddTransactionUiState()
+    object Success : AddTransactionUiState()
+    data class Error(val message: String) : AddTransactionUiState()
 }

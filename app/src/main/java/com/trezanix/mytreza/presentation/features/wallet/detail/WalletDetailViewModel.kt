@@ -3,9 +3,9 @@ package com.trezanix.mytreza.presentation.features.wallet.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.trezanix.mytreza.data.remote.dto.DailyStatsDto
-import com.trezanix.mytreza.data.remote.dto.TransactionDto
-import com.trezanix.mytreza.domain.model.WalletStats
+import com.trezanix.mytreza.domain.model.Transaction // Import Domain
+import com.trezanix.mytreza.domain.model.Wallet     // Import Domain
+import com.trezanix.mytreza.domain.model.WalletStats // Import Domain
 import com.trezanix.mytreza.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,73 +22,80 @@ class WalletDetailViewModel @Inject constructor(
 
     private val walletId: String = checkNotNull(savedStateHandle["walletId"])
 
-    private val calendar = Calendar.getInstance()
-    private val _selectedMonth = MutableStateFlow(calendar.get(Calendar.MONTH) + 1)
-    private val _selectedYear = MutableStateFlow(calendar.get(Calendar.YEAR))
+    // --- STATE MENGGUNAKAN DOMAIN MODEL (BUKAN DTO) ---
+    private val _wallet = MutableStateFlow<Wallet?>(null)
+    val wallet = _wallet.asStateFlow()
 
-    val selectedMonth = _selectedMonth.asStateFlow()
-    val selectedYear = _selectedYear.asStateFlow()
+    private val _stats = MutableStateFlow<WalletStats?>(null)
+    val stats = _stats.asStateFlow()
 
-    private val _state = MutableStateFlow<DetailState>(DetailState.Loading)
-    val state = _state.asStateFlow()
+    private val _transactions = MutableStateFlow<List<Transaction>>(emptyList())
+    val transactions = _transactions.asStateFlow()
+
+    private val _selectedDate = MutableStateFlow(Calendar.getInstance())
+    val selectedDate = _selectedDate.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
 
     init {
         loadData()
     }
 
-    fun changeMonth(month: Int, year: Int) {
-        _selectedMonth.value = month
-        _selectedYear.value = year
+    fun loadData() {
+        viewModelScope.launch {
+            _isLoading.value = true
+
+            val calendar = _selectedDate.value
+            val month = calendar.get(Calendar.MONTH) + 1
+            val year = calendar.get(Calendar.YEAR)
+
+            // 1. Get Detail (Repository return Result<Wallet>)
+            repository.getWalletDetail(walletId)
+                .onSuccess { _wallet.value = it }
+
+            // 2. Get Stats (Repository return Result<WalletStats>)
+            repository.getWalletStats(walletId, month, year)
+                .onSuccess { _stats.value = it }
+                .onFailure { /* Handle error */ }
+
+            // 3. Get Transactions (Repository return Result<List<Transaction>>)
+            repository.getTransactionsByWallet(walletId, month, year)
+                .onSuccess { _transactions.value = it }
+                .onFailure { _transactions.value = emptyList() }
+
+            _isLoading.value = false
+        }
+    }
+
+    fun nextMonth() {
+        val newCal = _selectedDate.value.clone() as Calendar
+        newCal.add(Calendar.MONTH, 1)
+        _selectedDate.value = newCal
         loadData()
     }
 
-    fun loadData() {
-        viewModelScope.launch {
-            _state.value = DetailState.Loading
-
-            val m = _selectedMonth.value
-            val y = _selectedYear.value
-
-            val walletResult = repository.getWalletDetail(walletId)
-
-            if (walletResult.isSuccess) {
-                val wallet = walletResult.getOrNull()!!
-                val trxResult = repository.getWalletTransactions(walletId, m, y)
-                val transactions = trxResult.getOrDefault(emptyList())
-                val statsResult = repository.getWalletStats(walletId, m, y)
-                val stats = statsResult.getOrDefault(WalletStats(0.0, 0.0, 0.0))
-                val dailyResult = repository.getWalletDailyStats(walletId, m, y)
-                val dailyStats = dailyResult.getOrDefault(emptyList())
-
-                _state.value = DetailState.Success(wallet, transactions, stats, dailyStats)
-            } else {
-                _state.value = DetailState.Error(walletResult.exceptionOrNull()?.message ?: "Gagal memuat")
-            }
-        }
+    fun prevMonth() {
+        val newCal = _selectedDate.value.clone() as Calendar
+        newCal.add(Calendar.MONTH, -1)
+        _selectedDate.value = newCal
+        loadData()
     }
 
-    fun deleteWallet(onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            _state.value = DetailState.Loading
+    private val _deleteState = MutableStateFlow<Boolean?>(null)
+    val deleteState = _deleteState.asStateFlow()
 
+    fun deleteWallet() {
+        viewModelScope.launch {
+            _isLoading.value = true
             repository.deleteWallet(walletId)
-                .onSuccess {
-                    onSuccess()
-                }
-                .onFailure { e ->
-                    loadData()
-                }
+                .onSuccess { _deleteState.value = true }
+                .onFailure { _deleteState.value = false }
+            _isLoading.value = false
         }
     }
 
-    sealed class DetailState {
-        object Loading : DetailState()
-        data class Success(
-            val wallet: com.trezanix.mytreza.domain.model.Wallet,
-            val transactions: List<TransactionDto>,
-            val stats: WalletStats,
-            val dailyStats: List<DailyStatsDto>
-        ) : DetailState()
-        data class Error(val message: String) : DetailState()
+    fun resetDeleteState() {
+        _deleteState.value = null
     }
 }

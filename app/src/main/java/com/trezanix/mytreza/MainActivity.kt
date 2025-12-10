@@ -108,7 +108,10 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("walletId") { type = NavType.StringType })
                         ) {
                             EditWalletScreen(
-                                onNavigateUp = { rootNavController.popBackStack() }
+                                onNavigateUp = { rootNavController.popBackStack() },
+                                onArchiveSuccess = {
+                                    rootNavController.popBackStack("main", inclusive = false)
+                                }
                             )
                         }
 

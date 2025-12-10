@@ -49,9 +49,6 @@ object AppModule {
             .create(MyTrezaApiService::class.java)
     }
 
-    @Provides
-    @Singleton
-    fun provideWalletRepository(api: MyTrezaApiService): WalletRepository {
-        return WalletRepositoryImpl(api)
-    }
+    // deleted provideWalletRepository
+
 }

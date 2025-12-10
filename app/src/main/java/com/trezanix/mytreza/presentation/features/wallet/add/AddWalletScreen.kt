@@ -15,14 +15,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.rounded.AccountBalance
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
+import androidx.compose.material.icons.rounded.Apartment
+import androidx.compose.material.icons.rounded.AttachMoney
+import androidx.compose.material.icons.rounded.CreditCard
+import androidx.compose.material.icons.rounded.Group
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -31,9 +40,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.trezanix.mytreza.domain.model.Wallet
-import com.trezanix.mytreza.presentation.features.wallet.WalletCard
+
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.presentation.util.mapTypeLabel
+import com.trezanix.mytreza.presentation.util.formatRupiah
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,7 +66,8 @@ fun AddWalletScreen(
         "#E91E63",
         "#9C27B0",
         "#607D8B",
-        "#000000"
+        "#000000",
+        "#795548"
     )
 
     LaunchedEffect(uiState) {
@@ -72,7 +83,7 @@ fun AddWalletScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tambah Dompet", fontWeight = FontWeight.Bold) },
+                title = { Text("Tambah Dompet", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
@@ -90,8 +101,13 @@ fun AddWalletScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(24.dp)
         ) {
-            Text("Preview Tampilan", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-            Spacer(modifier = Modifier.height(12.dp))
+            // Preview Section
+            Text(
+                "Preview Kartu",
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.Gray,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
 
             LivePreviewCard(
                 name = if (name.isBlank()) "Nama Dompet" else name,
@@ -102,29 +118,34 @@ fun AddWalletScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Form Section
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(0.dp),
-                shape = RoundedCornerShape(24.dp)
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    // Input Name
                     OutlinedTextField(
                         value = name,
                         onValueChange = { viewModel.walletName.value = it },
                         label = { Text("Nama Dompet") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandBlue,
-                            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+                            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
+                            focusedContainerColor = Color(0xFFFAFAFA),
+                            unfocusedContainerColor = Color(0xFFFAFAFA)
                         ),
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
+                    // Input Balance
                     OutlinedTextField(
                         value = balance,
                         onValueChange = { if (it.all { c -> c.isDigit() }) viewModel.initialBalance.value = it },
@@ -132,59 +153,70 @@ fun AddWalletScreen(
                         prefix = { Text("Rp ", fontWeight = FontWeight.Bold) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BrandBlue,
-                            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+                            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
+                            focusedContainerColor = Color(0xFFFAFAFA),
+                            unfocusedContainerColor = Color(0xFFFAFAFA)
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Text("Tipe Dompet", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        val types = listOf("BANK", "EWALLET", "CASH", "SAVING", "FAMILY", "ASSET")
-
-                        items(types) { typeItem ->
-                            WalletTypeChip(
-                                label = mapTypeLabel(typeItem),
-                                selected = type == typeItem,
-                                onClick = { viewModel.walletType.value = typeItem }
-                            )
+                    // Type Selector
+                    Column {
+                        Text(
+                            "Tipe Dompet",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            val types = listOf("BANK", "EWALLET", "CASH", "SAVING", "FAMILY", "ASSET")
+                            items(types) { typeItem ->
+                                WalletTypeChip(
+                                    label = mapTypeLabel(typeItem),
+                                    selected = type == typeItem,
+                                    onClick = { viewModel.walletType.value = typeItem }
+                                )
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Text("Warna Kartu", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(colorPalette) { color ->
-                            ColorSwatch(
-                                colorHex = color,
-                                isSelected = colorHex == color,
-                                onClick = { viewModel.selectedColor.value = color }
-                            )
+                    // Color Selector
+                    Column {
+                        Text(
+                            "Warna Kartu",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(colorPalette) { color ->
+                                ColorSwatch(
+                                    colorHex = color,
+                                    isSelected = colorHex == color,
+                                    onClick = { viewModel.selectedColor.value = color }
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             Button(
                 onClick = { viewModel.saveWallet {} },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(56.dp)
+                    .shadow(16.dp, RoundedCornerShape(16.dp), spotColor = BrandBlue.copy(alpha = 0.4f)),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
-                elevation = ButtonDefaults.buttonElevation(8.dp),
                 enabled = uiState !is AddWalletViewModel.AddWalletUiState.Loading
             ) {
                 if (uiState is AddWalletViewModel.AddWalletUiState.Loading) {
@@ -193,8 +225,8 @@ fun AddWalletScreen(
                     Text("Simpan Dompet", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
-
-            Spacer(modifier = Modifier.height(200.dp))
+            
+            Spacer(modifier = Modifier.height(50.dp))
         }
     }
 }
@@ -205,64 +237,102 @@ fun LivePreviewCard(name: String, balance: Double, type: String, colorHex: Strin
     val cardColor = try {
         Color(android.graphics.Color.parseColor(colorHex))
     } catch (e: Exception) {
-        BrandBlue // Fallback
+        BrandBlue
     }
 
+    val gradient = Brush.linearGradient(
+        colors = listOf(cardColor, cardColor.copy(alpha = 0.8f))
+    )
+
     Card(
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(10.dp),
-        modifier = Modifier.fillMaxWidth().height(180.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .shadow(
+                elevation = 16.dp,
+                shape = RoundedCornerShape(24.dp),
+                spotColor = cardColor.copy(alpha = 0.5f)
+            ),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(cardColor, cardColor.copy(alpha = 0.7f))
-                    )
-                )
-                .padding(24.dp)
+                .background(gradient)
         ) {
+            // Decor Circles
+            Box(
+                modifier = Modifier
+                    .offset(x = 220.dp, y = (-30).dp)
+                    .size(250.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.05f))
+            )
+            Box(
+                modifier = Modifier
+                    .offset(x = (-60).dp, y = 120.dp)
+                    .size(200.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.05f))
+            )
+
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(28.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
+                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                    Icon(
+                        imageVector = Icons.Rounded.CreditCard,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.size(40.dp)
                     )
+                    
                     Surface(
                         color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(50)
                     ) {
                         Text(
-                            text = type,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
+                            text = type.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            fontWeight = FontWeight.Bold
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                         )
                     }
                 }
 
+                // Balance
                 Column {
                     Text(
                         text = "Saldo Awal",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.8f)
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.7f)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = com.trezanix.mytreza.presentation.util.formatRupiah(balance),
-                        style = MaterialTheme.typography.headlineLarge,
+                        text = formatRupiah(balance),
+                        style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
+                    )
+                }
+
+                // Footer Name
+                Column {
+                    Text(
+                        text = name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White.copy(alpha = 0.9f)
                     )
                 }
             }
@@ -276,12 +346,12 @@ fun ColorSwatch(colorHex: String, isSelected: Boolean, onClick: () -> Unit) {
 
     Box(
         modifier = Modifier
-            .size(48.dp)
+            .size(52.dp)
             .clip(CircleShape)
             .background(color)
             .clickable(onClick = onClick)
             .then(
-                if (isSelected) Modifier.border(3.dp, Color.Gray.copy(alpha = 0.5f), CircleShape)
+                if (isSelected) Modifier.border(3.dp, Color.White, CircleShape).border(5.dp, color.copy(alpha = 0.5f), CircleShape)
                 else Modifier
             ),
         contentAlignment = Alignment.Center
@@ -297,14 +367,20 @@ fun WalletTypeChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         color = if (selected) BrandBlue else Color.White,
         contentColor = if (selected) Color.White else Color.Black,
-        shape = RoundedCornerShape(12.dp),
-        border = if (!selected) androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray) else null,
+        shape = RoundedCornerShape(16.dp),
+        border = if (!selected) androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f)) else null,
         modifier = Modifier
-            .clickable(onClick = onClick)
-            .height(40.dp),
+            .height(44.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick),
+        shadowElevation = if (selected) 8.dp else 0.dp
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 20.dp)) {
-            Text(text = label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+            Text(
+                text = label, 
+                style = MaterialTheme.typography.labelLarge, 
+                fontWeight = if(selected) FontWeight.Bold else FontWeight.Medium
+            )
         }
     }
 }

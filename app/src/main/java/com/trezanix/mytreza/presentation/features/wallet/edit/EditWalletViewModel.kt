@@ -74,6 +74,22 @@ class EditWalletViewModel @Inject constructor(
         }
     }
 
+    fun archiveWallet(onSuccess: () -> Unit) {
+
+        viewModelScope.launch {
+            _uiState.value = EditState.Loading
+
+            repository.archiveWallet(walletId)
+                .onSuccess {
+                    _uiState.value = EditState.Success
+                    onSuccess()
+                }
+                .onFailure { e ->
+                    _uiState.value = EditState.Error(e.message ?: "Gagal mengarsipkan dompet")
+                }
+        }
+    }
+
     sealed class EditState {
         object Idle : EditState()
         object Loading : EditState()

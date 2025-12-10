@@ -25,4 +25,16 @@ abstract class RepositoryModule {
     abstract fun bindDashboardRepository(
         dashboardRepositoryImpl: DashboardRepositoryImpl
     ): DashboardRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWalletRepository(
+        walletRepositoryImpl: com.trezanix.mytreza.data.repository.WalletRepositoryImpl
+    ): com.trezanix.mytreza.domain.repository.WalletRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCategoryRepository(
+        categoryRepositoryImpl: com.trezanix.mytreza.data.repository.CategoryRepositoryImpl
+    ): com.trezanix.mytreza.domain.repository.CategoryRepository
 }

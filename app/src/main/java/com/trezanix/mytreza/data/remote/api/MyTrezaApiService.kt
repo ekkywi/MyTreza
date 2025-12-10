@@ -2,10 +2,10 @@ package com.trezanix.mytreza.data.remote.api
 
 import com.trezanix.mytreza.data.remote.dto.AuthData
 import com.trezanix.mytreza.data.remote.dto.BaseResponse
+import com.trezanix.mytreza.data.remote.dto.CategoryDto
 import com.trezanix.mytreza.data.remote.dto.CreateTransactionRequest
 import com.trezanix.mytreza.data.remote.dto.CreateTransferRequest
 import com.trezanix.mytreza.data.remote.dto.CreateWalletRequest
-import com.trezanix.mytreza.data.remote.dto.DailyStatsDto
 import com.trezanix.mytreza.data.remote.dto.LoginRequest
 import com.trezanix.mytreza.data.remote.dto.RegisterRequest
 import com.trezanix.mytreza.data.remote.dto.DashboardDto
@@ -13,12 +13,14 @@ import com.trezanix.mytreza.data.remote.dto.TransactionDataResponse
 import com.trezanix.mytreza.data.remote.dto.TransactionDto
 import com.trezanix.mytreza.data.remote.dto.UpdateWalletRequest
 import com.trezanix.mytreza.data.remote.dto.UserDto
-import com.trezanix.mytreza.data.remote.dto.WalletDataResponse
 import com.trezanix.mytreza.data.remote.dto.WalletDto
+import com.trezanix.mytreza.data.remote.dto.WalletListDataResponse
+import com.trezanix.mytreza.data.remote.dto.WalletStatsDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -38,29 +40,34 @@ interface MyTrezaApiService {
     suspend fun getDashboard(): Response<BaseResponse<DashboardDto>>
 
     @GET("wallets")
-    suspend fun getWallets(): Response<BaseResponse<WalletDataResponse>>
+    suspend fun getWallets(): Response<BaseResponse<WalletListDataResponse>>
 
     @GET("wallets/{id}")
     suspend fun getWalletDetail(@Path("id") id: String): Response<BaseResponse<WalletDto>>
 
-    @GET("wallets/{id}/stats/daily")
-    suspend fun getWalletDailyStats(
-        @Path("id") walletId: String,
+    @GET("wallets/{id}/stats")
+    suspend fun getWalletStats(
+        @Path("id") id: String,
         @Query("month") month: Int,
         @Query("year") year: Int
-    ): Response<BaseResponse<List<DailyStatsDto>>>
+    ): Response<BaseResponse<WalletStatsDto>>
 
     @POST("wallets")
-    suspend fun createWallet(@Body request: CreateWalletRequest): Response<BaseResponse<WalletDto>>
+    suspend fun createWallet(
+        @Body request: CreateWalletRequest // Ubah dari Map ke DTO
+    ): Response<BaseResponse<WalletDto>>
 
     @PUT("wallets/{id}")
     suspend fun updateWallet(
         @Path("id") id: String,
-        @Body request: UpdateWalletRequest
+        @Body request: UpdateWalletRequest // Ubah dari Map ke DTO
     ): Response<BaseResponse<WalletDto>>
 
     @DELETE("wallets/{id}")
     suspend fun deleteWallet(@Path("id") id: String): Response<BaseResponse<Any>>
+
+    @PATCH("wallets/{id}/archive")
+    suspend fun archiveWallet(@Path("id") id: String): Response<BaseResponse<Any>>
 
     @GET("transactions")
     suspend fun getTransactionsByWallet(
@@ -68,6 +75,12 @@ interface MyTrezaApiService {
         @Query("month") month: Int,
         @Query("year") year: Int,
         @Query("limit") limit: Int = 20
+    ): Response<BaseResponse<TransactionDataResponse>>
+
+    @GET("transactions")
+    suspend fun getTransactions(
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 10
     ): Response<BaseResponse<TransactionDataResponse>>
 
     @POST("transactions")
@@ -79,4 +92,7 @@ interface MyTrezaApiService {
     suspend fun createTransfer(
         @Body request: CreateTransferRequest
     ): Response<BaseResponse<Any>>
+
+    @GET("categories")
+    suspend fun getCategories(): Response<BaseResponse<List<CategoryDto>>>
 }

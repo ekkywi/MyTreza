@@ -1,28 +1,54 @@
 package com.trezanix.mytreza.data.repository
 
 import com.trezanix.mytreza.data.remote.api.MyTrezaApiService
-import com.trezanix.mytreza.data.remote.dto.CreateTransactionRequest
-import com.trezanix.mytreza.data.remote.dto.CreateTransferRequest
 import com.trezanix.mytreza.data.remote.dto.CreateWalletRequest
-import com.trezanix.mytreza.data.remote.dto.DailyStatsDto
 import com.trezanix.mytreza.data.remote.dto.TransactionDto
 import com.trezanix.mytreza.data.remote.dto.UpdateWalletRequest
+import com.trezanix.mytreza.data.remote.dto.WalletDto
+// --- IMPORT TAMBAHAN YANG WAJIB ADA ---
+import com.trezanix.mytreza.data.remote.dto.CreateTransactionRequest
+import com.trezanix.mytreza.data.remote.dto.CreateTransferRequest
+// --------------------------------------
+import com.trezanix.mytreza.domain.model.Transaction
 import com.trezanix.mytreza.domain.model.Wallet
+import com.trezanix.mytreza.domain.model.WalletStats
 import com.trezanix.mytreza.domain.repository.WalletRepository
 import javax.inject.Inject
 
 class WalletRepositoryImpl @Inject constructor(
     private val api: MyTrezaApiService
 ) : WalletRepository {
+    // ... (sisanya sama persis dengan yang Anda kirimkan, tidak perlu diubah) ...
+    // ... Paste isi fungsi-fungsinya di sini ...
 
+    // --- 1. CREATE ---
+    override suspend fun createWallet(name: String, type: String, balance: Double, color: String, icon: String): Result<Wallet> {
+        return try {
+            val request = CreateWalletRequest(
+                name = name,
+                type = type,
+                initialBalance = balance,
+                color = color,
+                icon = icon
+            )
+            val response = api.createWallet(request)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(response.body()!!.data!!.toDomain())
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // --- 2. GET ALL ---
     override suspend fun getWallets(): Result<List<Wallet>> {
         return try {
             val response = api.getWallets()
-
             if (response.isSuccessful && response.body()?.success == true) {
-                val walletData = response.body()?.data
-                val walletItems = walletData?.items ?: emptyList()
-                Result.success(walletItems.map { it.toDomain() })
+                val items = response.body()?.data?.items ?: emptyList()
+                Result.success(items.map { it.toDomain() })
             } else {
                 Result.failure(Exception(response.message()))
             }
@@ -31,43 +57,12 @@ class WalletRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createWallet(name: String, type: String, balance: Double, color: String, icon: String): Result<Wallet> {
-        return try {
-            val request = CreateWalletRequest(name, type, balance, color, icon)
-            val response = api.createWallet(request)
-            if (response.isSuccessful && response.body()?.success == true) {
-                val data = response.body()?.data
-                if (data != null) Result.success(data.toDomain())
-                else Result.failure(Exception("Data kosong"))
-            } else {
-                Result.failure(Exception(response.message()))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun updateWallet(id: String, name: String, color: String, icon: String): Result<Boolean> {
-        return try {
-            val request = UpdateWalletRequest(name, color, icon)
-            val response = api.updateWallet(id, request)
-            if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(true)
-            } else {
-                Result.failure(Exception(response.message()))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
+    // --- 3. GET DETAIL ---
     override suspend fun getWalletDetail(id: String): Result<Wallet> {
         return try {
             val response = api.getWalletDetail(id)
             if (response.isSuccessful && response.body()?.success == true) {
-                val data = response.body()?.data
-                if (data != null) Result.success(data.toDomain())
-                else Result.failure(Exception("Data dompet kosong"))
+                Result.success(response.body()!!.data!!.toDomain())
             } else {
                 Result.failure(Exception(response.message()))
             }
@@ -76,12 +71,13 @@ class WalletRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getWalletTransactions(id: String, month: Int, year: Int): Result<List<TransactionDto>> {
+    // --- 4. UPDATE ---
+    override suspend fun updateWallet(id: String, name: String, color: String, icon: String): Result<Wallet> {
         return try {
-            val response = api.getTransactionsByWallet(id, month, year)
+            val request = UpdateWalletRequest(name = name, color = color, icon = icon)
+            val response = api.updateWallet(id, request)
             if (response.isSuccessful && response.body()?.success == true) {
-                val items = response.body()?.data?.items ?: emptyList()
-                Result.success(items)
+                Result.success(response.body()!!.data!!.toDomain())
             } else {
                 Result.failure(Exception(response.message()))
             }
@@ -90,32 +86,45 @@ class WalletRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getWalletDailyStats(id: String, month: Int, year: Int): Result<List<DailyStatsDto>> {
+    // --- 5. ARCHIVE ---
+    override suspend fun archiveWallet(id: String): Result<Boolean> {
         return try {
-            val response = api.getWalletDailyStats(id, month, year)
+            val response = api.archiveWallet(id)
             if (response.isSuccessful && response.body()?.success == true) {
-                val data = response.body()?.data ?: emptyList()
-                Result.success(data)
+                Result.success(true)
             } else {
-                Result.failure(Exception(response.message()))
+                Result.failure(Exception(response.body()?.message ?: response.message()))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun getWalletStats(id: String, month: Int, year: Int): Result<com.trezanix.mytreza.domain.model.WalletStats> {
+    // --- 6. DELETE ---
+    override suspend fun deleteWallet(id: String): Result<Boolean> {
         return try {
-            val response = api.getWalletDailyStats(id, month, year)
+            val response = api.deleteWallet(id)
             if (response.isSuccessful && response.body()?.success == true) {
-                val data = response.body()?.data ?: emptyList()
-                val income = data.sumOf { it.income }
-                val expense = data.sumOf { it.expense }
+                Result.success(true)
+            } else {
+                Result.failure(Exception(response.body()?.message ?: response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // --- 7. STATS ---
+    override suspend fun getWalletStats(id: String, month: Int, year: Int): Result<WalletStats> {
+        return try {
+            val response = api.getWalletStats(id, month, year)
+            if (response.isSuccessful && response.body()?.success == true) {
+                val dto = response.body()!!.data!!
                 Result.success(
-                    com.trezanix.mytreza.domain.model.WalletStats(
-                        income = income,
-                        expense = expense,
-                        total = income - expense
+                    WalletStats(
+                        totalIncome = dto.totalIncome,
+                        totalExpense = dto.totalExpense,
+                        netBalance = dto.netBalance
                     )
                 )
             } else {
@@ -126,11 +135,27 @@ class WalletRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteWallet(id: String): Result<Boolean> {
+    // --- 7. TRANSACTIONS (GLOBAL / DASHBOARD) ---
+    override suspend fun getTransactions(page: Int, limit: Int): Result<List<TransactionDto>> {
         return try {
-            val response = api.deleteWallet(id)
+            val response = api.getTransactions(page, limit)
             if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(true)
+                Result.success(response.body()?.data?.items ?: emptyList())
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // --- 8. TRANSACTIONS (BY WALLET / DETAIL) ---
+    override suspend fun getTransactionsByWallet(id: String, month: Int, year: Int): Result<List<Transaction>> {
+        return try {
+            val response = api.getTransactionsByWallet(walletId = id, month = month, year = year)
+            if (response.isSuccessful && response.body()?.success == true) {
+                val items = response.body()?.data?.items ?: emptyList()
+                Result.success(items.map { it.toDomain() })
             } else {
                 Result.failure(Exception(response.message()))
             }
@@ -141,24 +166,25 @@ class WalletRepositoryImpl @Inject constructor(
 
     override suspend fun createTransaction(
         walletId: String,
-        categoryId: String?,
-        type: String,
         amount: Double,
-        description: String,
-        date: String
-    ): Result<Boolean> {
+        type: String,
+        date: String,
+        description: String?,
+        categoryId: String? // <--- TAMBAHAN PARAMETER
+    ): Result<Transaction> {
         return try {
             val request = CreateTransactionRequest(
                 walletId = walletId,
-                categoryId = categoryId,
-                type = type,
                 amount = amount,
+                type = type,
+                date = date,
                 description = description,
-                date = date
+                categoryId = categoryId // <--- PASSING KE DTO
             )
+            // ... (sisanya sama)
             val response = api.createTransaction(request)
             if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(true)
+                Result.success(response.body()!!.data!!.toDomain())
             } else {
                 Result.failure(Exception(response.message()))
             }
@@ -168,21 +194,22 @@ class WalletRepositoryImpl @Inject constructor(
     }
 
     override suspend fun createTransfer(
-        fromWalletId: String,
-        toWalletId: String,
+        sourceWalletId: String,
+        targetWalletId: String,
         amount: Double,
-        adminFee: Double,
-        description: String,
-        date: String
+        date: String,
+        description: String?,
+        adminFee: Double
     ): Result<Boolean> {
         return try {
             val request = CreateTransferRequest(
-                fromWalletId = fromWalletId,
-                toWalletId = toWalletId,
+                // SESUAIKAN NAMA PARAMETER DENGAN DTO
+                sourceWalletId = sourceWalletId,
+                targetWalletId = targetWalletId,
                 amount = amount,
-                adminFee = adminFee,
+                date = date,
                 description = description,
-                date = date
+                adminFee = adminFee
             )
             val response = api.createTransfer(request)
             if (response.isSuccessful && response.body()?.success == true) {
@@ -193,5 +220,30 @@ class WalletRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // --- MAPPERS ---
+    private fun WalletDto.toDomain(): Wallet {
+        return Wallet(
+            id = this.id,
+            name = this.name,
+            type = this.type,
+            balance = this.balance,
+            color = this.color,
+            icon = this.icon,
+            accountNumber = ""
+        )
+    }
+
+    private fun TransactionDto.toDomain(): Transaction {
+        return Transaction(
+            id = this.id,
+            amount = this.amount,
+            description = this.description,
+            date = this.date,
+            type = this.type,
+            categoryName = this.category?.name ?: "Lainnya",
+            walletName = this.wallet?.name ?: ""
+        )
     }
 }
