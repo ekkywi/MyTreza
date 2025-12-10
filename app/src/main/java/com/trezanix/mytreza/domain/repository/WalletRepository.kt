@@ -53,4 +53,6 @@ interface WalletRepository {
         adminFee: Double = 0.0
         // Admin fee kita skip dulu biar compile jalan
     ): Result<Boolean>
+
+    suspend fun deleteTransaction(id: String): Result<Boolean>
 }

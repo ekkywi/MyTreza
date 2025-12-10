@@ -246,4 +246,18 @@ class WalletRepositoryImpl @Inject constructor(
             walletName = this.wallet?.name ?: ""
         )
     }
+
+    override suspend fun deleteTransaction(id: String): Result<Boolean> {
+        return try {
+            val response = api.deleteTransaction(id)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(true)
+            } else {
+                val errorMsg = response.body()?.message ?: response.message()
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

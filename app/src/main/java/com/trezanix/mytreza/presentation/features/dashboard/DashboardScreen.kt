@@ -1,5 +1,6 @@
 package com.trezanix.mytreza.presentation.features.dashboard
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,6 +30,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.trezanix.mytreza.data.remote.dto.TransactionDto
+import com.trezanix.mytreza.domain.model.Transaction
+import com.trezanix.mytreza.presentation.features.transaction.detail.TransactionDetailSheet // Pastikan import ini ada
 import com.trezanix.mytreza.presentation.theme.AccentGreen
 import com.trezanix.mytreza.presentation.theme.AccentRed
 import com.trezanix.mytreza.presentation.theme.BrandBlue
@@ -42,14 +46,33 @@ import java.util.Locale
 fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
-    // Collect Data Real dari ViewModel
+    // --- STATE COLLECTORS ---
     val totalBalance by viewModel.totalBalance.collectAsState()
     val recentTransactions by viewModel.recentTransactions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val message by viewModel.message.collectAsState() // Pesan Toast (Sukses/Error)
 
-    // --- AUTO REFRESH LOGIC ---
-    // Agar saldo update otomatis saat kembali dari halaman lain
+    // --- LOCAL STATE ---
+    // Menyimpan transaksi yang sedang diklik untuk ditampilkan di BottomSheet
+    var selectedTransaction by remember { mutableStateOf<Transaction?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val userName by viewModel.userName.collectAsState()
+
+
+    // --- SIDE EFFECTS ---
+
+    // 1. Tampilkan Toast jika ada pesan dari ViewModel
+    LaunchedEffect(message) {
+        message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessage()
+        }
+    }
+
+    // 2. Auto Refresh saat kembali ke halaman ini
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -63,27 +86,28 @@ fun DashboardScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA) // Background abu-abu sangat muda yang bersih
+        containerColor = Color(0xFFF5F7FA)
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            contentPadding = PaddingValues(bottom = 100.dp) // Space untuk BottomNav
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            // 1. HEADER (Gradient & Saldo)
+            // 1. HEADER (Saldo)
             item {
                 DashboardHeader(
                     totalBalance = totalBalance,
-                    isLoading = isLoading
+                    isLoading = isLoading,
+                    userName = userName
                 )
             }
 
-            // 2. QUICK ACTIONS (Menu Cepat)
+            // 2. QUICK ACTIONS
             item {
                 Column(
                     modifier = Modifier
-                        .offset(y = (-30).dp) // Efek menumpuk sedikit ke header
+                        .offset(y = (-30).dp)
                         .padding(horizontal = 24.dp)
                 ) {
                     QuickActionsGrid()
@@ -110,16 +134,16 @@ fun DashboardScreen(
                         text = "Lihat Semua",
                         style = MaterialTheme.typography.labelMedium,
                         color = BrandBlue,
-                        modifier = Modifier.clickable { /* Navigate to History */ }
+                        modifier = Modifier.clickable { /* TODO: Navigate to History */ }
                     )
                 }
             }
 
-            // 4. LIST TRANSAKSI (Real Data)
+            // 4. LIST TRANSAKSI
             if (isLoading && recentTransactions.isEmpty()) {
                 item {
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BrandBlue)
+                    Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = BrandBlue, modifier = Modifier.size(32.dp))
                     }
                 }
             } else if (recentTransactions.isEmpty()) {
@@ -127,31 +151,93 @@ fun DashboardScreen(
                     EmptyTransactionState()
                 }
             } else {
-                items(recentTransactions) { trx ->
-                    TransactionItem(trx)
+                items(recentTransactions) { trxDto ->
+                    // Wrapper Box untuk menangani Klik Item
+                    Box(modifier = Modifier.clickable {
+                        // Konversi DTO ke Domain Model saat diklik
+                        selectedTransaction = trxDto.toDomain()
+                    }) {
+                        TransactionItem(transaction = trxDto)
+                    }
                 }
             }
         }
     }
+
+// --- 5. BOTTOM SHEET DETAIL ---
+    if (selectedTransaction != null) {
+        TransactionDetailSheet(
+            transaction = selectedTransaction!!,
+            onDismiss = { selectedTransaction = null },
+            onEdit = {
+                selectedTransaction = null
+                // TODO: Navigasi ke Edit
+            },
+            onDelete = {
+                // UPDATE: Jangan langsung hapus, tapi munculkan Dialog
+                showDeleteDialog = true
+                // (Jangan set selectedTransaction = null dulu, biar sheet tetap ada di background atau tutup sesuai selera)
+            }
+        )
+    }
+
+    // --- 6. DIALOG KONFIRMASI HAPUS (TAMBAHAN BARU) ---
+    if (showDeleteDialog && selectedTransaction != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Hapus Transaksi?") },
+            text = { Text("Data yang dihapus tidak dapat dikembalikan. Jika ini transaksi Transfer, pasangannya juga akan terhapus.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // EKSEKUSI HAPUS
+                        selectedTransaction?.id?.let { id ->
+                            viewModel.deleteTransaction(id)
+                        }
+                        showDeleteDialog = false
+                        selectedTransaction = null // Tutup BottomSheet juga
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = AccentRed)
+                ) {
+                    Text("Hapus", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Batal")
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 }
 
+// --- HELPER MAPPER (DTO -> DOMAIN) ---
+// Fungsi ini mengubah data mentah API menjadi data bersih untuk UI Detail
+fun TransactionDto.toDomain(): Transaction {
+    return Transaction(
+        id = this.id,
+        amount = this.amount,
+        description = this.description,
+        date = this.date,
+        type = this.type,
+        categoryName = this.category?.name ?: "Umum",
+        walletName = this.wallet?.name ?: "Dompet"
+    )
+}
+
+// --- SUB COMPONENTS (UI ELEMENTS) ---
+
 @Composable
-fun DashboardHeader(
-    totalBalance: Double,
-    isLoading: Boolean
-) {
+fun DashboardHeader(totalBalance: Double, isLoading: Boolean, userName: String) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(260.dp) // Sedikit lebih pendek agar proporsional
+            .height(260.dp)
             .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(BrandBlue, BrandBlueDark)
-                )
-            )
+            .background(Brush.verticalGradient(colors = listOf(BrandBlue, BrandBlueDark)))
     ) {
-        // Hiasan Circle Transparan (Aesthetic touch)
         Box(
             modifier = Modifier
                 .offset(x = 200.dp, y = (-50).dp)
@@ -159,88 +245,30 @@ fun DashboardHeader(
                 .background(Color.White.copy(alpha = 0.05f), CircleShape)
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
-                .padding(top = 10.dp) // Safe area
-        ) {
-            // Top Row: Profile & Notif
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Column(modifier = Modifier.fillMaxSize().padding(24.dp).padding(top = 10.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Profile Icon dengan Border Putih Tipis
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
-                            .padding(4.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.AccountCircle,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
+                    Box(modifier = Modifier.size(48.dp).border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape).padding(4.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.AccountCircle, null, tint = Color.White, modifier = Modifier.size(32.dp))
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(
-                            text = getGreetingMessage(), // Sapaan Dinamis
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
-                        Text(
-                            text = "Kawan MyTreza", // Nama User (Bisa diambil dari pref nanti)
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        Text(getGreetingMessage(), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
+                        Text(text = userName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
-
-                IconButton(
-                    onClick = { /* TODO */ },
-                    modifier = Modifier
-                        .background(Color.White.copy(alpha = 0.1f), CircleShape)
-                        .size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notifikasi",
-                        tint = Color.White
-                    )
+                IconButton(onClick = {}, modifier = Modifier.background(Color.White.copy(alpha = 0.1f), CircleShape).size(40.dp)) {
+                    Icon(Icons.Default.Notifications, "Notifikasi", tint = Color.White)
                 }
             }
-
             Spacer(modifier = Modifier.height(36.dp))
-
-            // Balance Section
-            Text(
-                text = "Total Saldo Aktif",
-                style = MaterialTheme.typography.labelLarge,
-                color = Color.White.copy(alpha = 0.7f)
-            )
+            Text("Total Saldo Aktif", style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.7f))
             Spacer(modifier = Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text(
-                        text = formatRupiah(totalBalance),
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = Color.White
-                    )
+                    Text(formatRupiah(totalBalance), style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp), color = Color.White)
                 }
             }
         }
@@ -249,24 +277,12 @@ fun DashboardHeader(
 
 @Composable
 fun QuickActionsGrid() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(12.dp, RoundedCornerShape(24.dp), spotColor = BrandBlue.copy(alpha = 0.1f)),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 20.dp, horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            QuickActionItem(icon = Icons.Default.QrCodeScanner, label = "Scan")
-            QuickActionItem(icon = Icons.Default.SwapHoriz, label = "Transfer")
-            QuickActionItem(icon = Icons.Default.History, label = "Riwayat")
-            QuickActionItem(icon = Icons.Default.MoreHoriz, label = "Lainnya")
+    Card(modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp), spotColor = BrandBlue.copy(alpha = 0.1f)), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(0.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            QuickActionItem(Icons.Default.QrCodeScanner, "Scan")
+            QuickActionItem(Icons.Default.SwapHoriz, "Transfer")
+            QuickActionItem(Icons.Default.History, "Riwayat")
+            QuickActionItem(Icons.Default.MoreHoriz, "Lainnya")
         }
     }
 }
@@ -274,34 +290,17 @@ fun QuickActionsGrid() {
 @Composable
 fun QuickActionItem(icon: ImageVector, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .background(Color(0xFFF5F7FA), CircleShape) // Warna background icon soft
-                .clip(CircleShape)
-                .clickable { /* TODO */ },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = BrandBlue,
-                modifier = Modifier.size(26.dp)
-            )
+        Box(modifier = Modifier.size(56.dp).background(Color(0xFFF5F7FA), CircleShape).clip(CircleShape).clickable { }, contentAlignment = Alignment.Center) {
+            Icon(icon, label, tint = BrandBlue, modifier = Modifier.size(26.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
     }
 }
 
 @Composable
-fun TransactionItem(trx: TransactionDto) {
-    val isExpense = trx.type == "EXPENSE"
+fun TransactionItem(transaction: TransactionDto) {
+    val isExpense = transaction.type == "EXPENSE"
     val amountColor = if (isExpense) AccentRed else AccentGreen
     val iconBgColor = if (isExpense) Color(0xFFFFEBEE) else Color(0xFFE8F5E9)
     val icon = if (isExpense) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward
@@ -310,85 +309,32 @@ fun TransactionItem(trx: TransactionDto) {
     val dateReadable = try {
         val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
         val formatter = SimpleDateFormat("dd MMM, HH:mm", Locale("id", "ID"))
-        val parsed = parser.parse(trx.date) ?: Date()
+        val parsed = parser.parse(transaction.date) ?: Date()
         formatter.format(parsed)
-    } catch (e: Exception) {
-        "-"
-    }
+    } catch (e: Exception) { "-" }
 
-    // Mengambil Nama Wallet (jika ada relasi di DTO) atau default
-    val walletName = trx.wallet?.name ?: "Dompet"
-
-    // Logic Icon Transfer
-    val isTransfer = trx.category?.name?.contains("Transfer", true) == true
+    val walletName = transaction.wallet?.name ?: "Dompet"
+    val isTransfer = transaction.category?.name?.contains("Transfer", true) == true
     val displayIcon = if (isTransfer) Icons.Default.SwapHoriz else icon
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .background(Color.White, RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Icon Box
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(iconBgColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = displayIcon,
-                contentDescription = null,
-                tint = amountColor,
-                modifier = Modifier.size(24.dp)
-            )
+    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).background(Color.White, RoundedCornerShape(16.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(iconBgColor), contentAlignment = Alignment.Center) {
+            Icon(displayIcon, null, tint = amountColor, modifier = Modifier.size(24.dp))
         }
-
         Spacer(modifier = Modifier.width(16.dp))
-
-        // Text Info
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = trx.category?.name ?: trx.description ?: "Transaksi",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Text(transaction.category?.name ?: transaction.description ?: "Transaksi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "$walletName • $dateReadable",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
+            Text("$walletName • $dateReadable", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
-
-        // Amount
-        Text(
-            text = "$prefix${formatRupiah(trx.amount)}",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = amountColor
-        )
+        Text("$prefix${formatRupiah(transaction.amount)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = amountColor)
     }
 }
 
 @Composable
 fun EmptyTransactionState() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Default.History,
-            contentDescription = null,
-            tint = Color.LightGray,
-            modifier = Modifier.size(64.dp)
-        )
+    Column(modifier = Modifier.fillMaxWidth().padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(Icons.Default.History, null, tint = Color.LightGray, modifier = Modifier.size(64.dp))
         Spacer(modifier = Modifier.height(16.dp))
         Text("Belum ada transaksi terbaru", color = Color.Gray)
     }

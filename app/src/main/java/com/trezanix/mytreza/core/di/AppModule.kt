@@ -5,6 +5,8 @@ import com.trezanix.mytreza.data.remote.AuthInterceptor
 import com.trezanix.mytreza.data.remote.api.MyTrezaApiService
 import com.trezanix.mytreza.data.repository.WalletRepositoryImpl
 import com.trezanix.mytreza.domain.repository.WalletRepository
+import com.trezanix.mytreza.data.repository.UserRepositoryImpl
+import com.trezanix.mytreza.domain.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,6 +51,9 @@ object AppModule {
             .create(MyTrezaApiService::class.java)
     }
 
-    // deleted provideWalletRepository
-
+    @Provides
+    @Singleton
+    fun provideUserRepository(api: MyTrezaApiService): UserRepository {
+        return UserRepositoryImpl(api)
+    }
 }

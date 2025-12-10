@@ -33,6 +33,9 @@ interface MyTrezaApiService {
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<BaseResponse<UserDto>>
 
+    @GET("users/me")
+    suspend fun getUserProfile(): Response<BaseResponse<UserDto>>
+
     @DELETE("users/me")
     suspend fun deleteAccount(): Response<BaseResponse<Any>>
 
@@ -91,6 +94,11 @@ interface MyTrezaApiService {
     @POST("transfers")
     suspend fun createTransfer(
         @Body request: CreateTransferRequest
+    ): Response<BaseResponse<Any>>
+
+    @DELETE("transactions/{id}")
+    suspend fun deleteTransaction(
+        @Path("id") id: String
     ): Response<BaseResponse<Any>>
 
     @GET("categories")
