@@ -19,12 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.trezanix.mytreza.R
 import com.trezanix.mytreza.presentation.components.AestheticCategoryDropdown
 import com.trezanix.mytreza.presentation.components.AestheticDatePicker
 import com.trezanix.mytreza.presentation.components.AestheticTimePicker
@@ -100,10 +101,14 @@ fun TransactionFormScreen(
         )
     }
 
+    // Resources for Toast
+    val msgSuccessUpdate = stringResource(R.string.msg_success_update)
+    val msgSuccessSave = stringResource(R.string.msg_success_save)
+
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is AddTransactionUiState.Success -> {
-                Toast.makeText(context, if (isEditMode) "Transaksi Berhasil Diupdate!" else "Transaksi Berhasil Disimpan!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, if (isEditMode) msgSuccessUpdate else msgSuccessSave, Toast.LENGTH_SHORT).show()
                 navController.popBackStack()
                 viewModel.resetState()
             }
@@ -126,15 +131,15 @@ fun TransactionFormScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        if (isEditMode) "Edit Transaksi" 
-                        else if (transactionType == "TRANSFER") "Transfer" 
-                        else "Transaksi Baru", 
+                        if (isEditMode) stringResource(R.string.title_edit_transaction) 
+                        else if (transactionType == "TRANSFER") stringResource(R.string.title_transfer) 
+                        else stringResource(R.string.title_add_transaction), 
                         fontWeight = FontWeight.SemiBold
                     ) 
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.nav_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF5F7FA))
@@ -168,7 +173,7 @@ fun TransactionFormScreen(
                         viewModel.amount.value = it
                     }
                 },
-                label = { Text("Jumlah (Rp)") },
+                label = { Text(stringResource(R.string.label_amount)) },
                 modifier = Modifier.fillMaxWidth(),
                 textStyle = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, color = themeColor),
                 singleLine = true,
@@ -185,16 +190,16 @@ fun TransactionFormScreen(
             // 3. Wallet & Category Selection
             if (transactionType == "TRANSFER") {
                 AestheticWalletDropdown(
-                    label = "Dari Dompet",
-                    value = sourceWallet?.name ?: "Pilih Sumber",
+                    label = stringResource(R.string.label_source_wallet),
+                    value = sourceWallet?.name ?: stringResource(R.string.placeholder_select_source),
                     items = walletList,
                     enabled = !isEditMode,
                     onItemSelected = { viewModel.selectedSourceWalletId.value = it.id }
                 )
                  // NOTE: AestheticCategoryDropdown is used below, but here we need WalletDropdown for target too
                 AestheticWalletDropdown(
-                    label = "Ke Dompet",
-                    value = targetWallet?.name ?: "Pilih Tujuan",
+                    label = stringResource(R.string.label_target_wallet),
+                    value = targetWallet?.name ?: stringResource(R.string.placeholder_select_target),
                     items = walletList,
                     enabled = !isEditMode,
                     onItemSelected = { viewModel.selectedTargetWalletId.value = it.id }
@@ -204,7 +209,7 @@ fun TransactionFormScreen(
                 OutlinedTextField(
                     value = adminFee,
                     onValueChange = { if (it.all { char -> char.isDigit() }) viewModel.adminFee.value = it },
-                    label = { Text("Biaya Admin (Opsional)") },
+                    label = { Text(stringResource(R.string.label_admin_fee)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(16.dp),
@@ -217,8 +222,8 @@ fun TransactionFormScreen(
                 )
             } else {
                 AestheticWalletDropdown(
-                    label = "Dompet",
-                    value = selectedWallet?.name ?: "Pilih Dompet",
+                    label = stringResource(R.string.label_wallet),
+                    value = selectedWallet?.name ?: stringResource(R.string.placeholder_select_wallet),
                     items = walletList,
                     enabled = !isEditMode,
                     onItemSelected = { viewModel.selectedWalletId.value = it.id }
@@ -229,8 +234,8 @@ fun TransactionFormScreen(
                 }
 
                 AestheticCategoryDropdown(
-                    label = "Kategori",
-                    value = selectedCategory?.name ?: "Pilih Kategori",
+                    label = stringResource(R.string.label_category),
+                    value = selectedCategory?.name ?: stringResource(R.string.placeholder_select_category),
                     items = filteredCategories,
                     onItemSelected = { viewModel.selectedCategoryId.value = it.id }
                 )
@@ -241,7 +246,7 @@ fun TransactionFormScreen(
                 OutlinedTextField(
                     value = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(date),
                     onValueChange = {},
-                    label = { Text("Tanggal") },
+                    label = { Text(stringResource(R.string.label_date)) },
                     readOnly = true,
                     trailingIcon = { Icon(Icons.Default.CalendarToday, null, tint = Color.Gray) },
                     modifier = Modifier.fillMaxWidth(),
@@ -265,7 +270,7 @@ fun TransactionFormScreen(
             OutlinedTextField(
                 value = note,
                 onValueChange = { viewModel.note.value = it },
-                label = { Text("Catatan (Opsional)") },
+                label = { Text(stringResource(R.string.label_note)) },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3,
                 shape = RoundedCornerShape(16.dp),
@@ -297,7 +302,7 @@ fun TransactionFormScreen(
                 } else {
                     Icon(Icons.Default.Check, null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (isEditMode) "Update Transaksi" else "Simpan Transaksi", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(if (isEditMode) stringResource(R.string.btn_update_transaction) else stringResource(R.string.btn_save_transaction), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -315,7 +320,7 @@ fun TransactionTypeSelector(selectedType: String, enabled: Boolean = true, onTyp
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         TypeTab(
-            text = "Pemasukan",
+            text = stringResource(R.string.label_income),
             isSelected = selectedType == "INCOME",
             color = AccentGreen,
             enabled = enabled,
@@ -323,7 +328,7 @@ fun TransactionTypeSelector(selectedType: String, enabled: Boolean = true, onTyp
             modifier = Modifier.weight(1f)
         )
         TypeTab(
-            text = "Pengeluaran",
+            text = stringResource(R.string.label_expense),
             isSelected = selectedType == "EXPENSE",
             color = AccentRed,
             enabled = enabled,
@@ -331,7 +336,7 @@ fun TransactionTypeSelector(selectedType: String, enabled: Boolean = true, onTyp
             modifier = Modifier.weight(1f)
         )
         TypeTab(
-            text = "Transfer",
+            text = stringResource(R.string.label_transfer),
             isSelected = selectedType == "TRANSFER",
             color = BrandBlue,
             enabled = enabled,

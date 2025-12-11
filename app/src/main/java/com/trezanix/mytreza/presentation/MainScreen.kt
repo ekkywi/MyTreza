@@ -30,7 +30,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.trezanix.mytreza.presentation.features.dashboard.DashboardScreen
-import com.trezanix.mytreza.presentation.features.placeholder.HistoryScreen
+import com.trezanix.mytreza.presentation.features.analysis.AnalysisScreen
 import com.trezanix.mytreza.presentation.features.profile.ProfileScreen
 import com.trezanix.mytreza.presentation.features.wallet.WalletScreen
 import com.trezanix.mytreza.presentation.navigation.BottomNavItem
@@ -82,11 +82,11 @@ fun MainScreen(
                     )
 
                     BottomMenuItem(
-                        icon = Icons.Default.History,
-                        label = "Riwayat",
-                        isSelected = currentRoute == BottomNavItem.History.route,
+                        icon = Icons.Default.PieChart,
+                        label = "Analisis",
+                        isSelected = currentRoute == BottomNavItem.Analysis.route,
                         onClick = {
-                            navController.navigate(BottomNavItem.History.route) {
+                            navController.navigate(BottomNavItem.Analysis.route) {
                                 popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
@@ -148,7 +148,9 @@ fun MainScreen(
                 DashboardScreen(onNavigateToEditTransaction = onNavigateToEditTransaction) 
             }
 
-            composable(BottomNavItem.History.route) { HistoryScreen() }
+            composable(BottomNavItem.Analysis.route) {
+                AnalysisScreen()
+            }
 
             composable(BottomNavItem.Wallet.route) {
                 WalletScreen(
@@ -257,7 +259,7 @@ fun AddActionSheetContent(onActionClick: (String) -> Unit) {
         ActionItem(
             icon = Icons.Default.PieChart,
             color = Color(0xFF00C853),
-            title = "Atur Budget",
+            title = "Buat Budget",
             desc = "Batasi pengeluaran bulananmu",
             onClick = { onActionClick("budget") }
         )

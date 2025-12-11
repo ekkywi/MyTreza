@@ -1,3 +1,37 @@
 <resources>
     <string name="app_name">MyTreza</string>
+    
+    <!-- Transaction Form -->
+    <string name="title_edit_transaction">Edit Transaksi</string>
+    <string name="title_add_transaction">Transaksi Baru</string>
+    <string name="title_transfer">Transfer</string>
+    <string name="nav_back">Kembali</string>
+    
+    <string name="label_income">Pemasukan</string>
+    <string name="label_expense">Pengeluaran</string>
+    <string name="label_transfer">Transfer</string>
+    
+    <string name="label_amount">Jumlah (Rp)</string>
+    <string name="label_wallet">Dompet</string>
+    <string name="label_source_wallet">Dari Dompet</string>
+    <string name="label_target_wallet">Ke Dompet</string>
+    <string name="label_category">Kategori</string>
+    <string name="label_date">Tanggal</string>
+    <string name="label_note">Catatan (Opsional)</string>
+    <string name="label_admin_fee">Biaya Admin (Opsional)</string>
+    
+    <string name="btn_save_transaction">Simpan Transaksi</string>
+    <string name="btn_update_transaction">Update Transaksi</string>
+    
+    <string name="msg_success_save">Transaksi Berhasil Disimpan!</string>
+    <string name="msg_success_update">Transaksi Berhasil Diupdate!</string>
+    <string name="msg_error_amount">Jumlah harus lebih dari 0</string>
+    <string name="msg_error_wallet">Pilih dompet terlebih dahulu</string>
+    <string name="msg_error_wallet_transfer">Pilih dompet asal dan tujuan</string>
+    <string name="msg_error_wallet_same">Dompet asal dan tujuan tidak boleh sama</string>
+    
+    <string name="placeholder_select_wallet">Pilih Dompet</string>
+    <string name="placeholder_select_source">Pilih Sumber</string>
+    <string name="placeholder_select_target">Pilih Tujuan</string>
+    <string name="placeholder_select_category">Pilih Kategori</string>
 </resources>

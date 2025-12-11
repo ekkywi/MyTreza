@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val label: String) {
     object Home : BottomNavItem("home", Icons.Default.Home, "Beranda")
-    object History : BottomNavItem("history", Icons.Default.History, "Riwayat")
+    object Analysis : BottomNavItem("analysis", Icons.Default.History, "Analisis")
     object Wallet : BottomNavItem("wallet", Icons.Default.Wallet, "Dompet")
     object Profile : BottomNavItem("profile", Icons.Default.AccountCircle, "Profil")
 }

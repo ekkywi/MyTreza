@@ -90,7 +90,7 @@ class AddTransactionViewModel @Inject constructor(
                          val complexParser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
                          date.value = complexParser.parse(trx.date) ?: Date()
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        android.util.Log.e("AddTransactionViewModel", "Error parsing date: ${e.message}", e)
                     }
                 }
                 .onFailure {
