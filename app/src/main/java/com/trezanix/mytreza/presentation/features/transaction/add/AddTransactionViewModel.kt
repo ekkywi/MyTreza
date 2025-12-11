@@ -67,7 +67,10 @@ class AddTransactionViewModel @Inject constructor(
         val currentAmount = amount.value.toDoubleOrNull()
         val currentWalletId = selectedWalletId.value
         val currentType = transactionType.value
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date.value)
+        val timeZone = java.util.TimeZone.getDefault()
+        val offset = timeZone.getOffset(date.value.time)
+        val adjustedDate = Date(date.value.time + offset)
+        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(adjustedDate)
         val currentNote = note.value
         val currentCategoryId = selectedCategoryId.value
 
@@ -104,7 +107,10 @@ class AddTransactionViewModel @Inject constructor(
         val currentAmount = amount.value.toDoubleOrNull()
         val sourceId = selectedSourceWalletId.value
         val targetId = selectedTargetWalletId.value
-        val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date.value)
+        val timeZone = java.util.TimeZone.getDefault()
+        val offset = timeZone.getOffset(date.value.time)
+        val adjustedDate = Date(date.value.time + offset)
+        val currentDate = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(adjustedDate)
         val currentNote = note.value
         val currentAdminFee = adminFee.value.toDoubleOrNull() ?: 0.0
 

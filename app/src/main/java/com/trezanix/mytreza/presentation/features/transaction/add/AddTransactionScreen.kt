@@ -28,11 +28,18 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.trezanix.mytreza.domain.model.Category
 import com.trezanix.mytreza.domain.model.Wallet
+import com.trezanix.mytreza.presentation.components.AestheticWalletDropdown
+import com.trezanix.mytreza.presentation.components.AestheticCategoryDropdown
 import com.trezanix.mytreza.presentation.theme.AccentGreen
 import com.trezanix.mytreza.presentation.theme.AccentRed
 import com.trezanix.mytreza.presentation.theme.BrandBlue
+import androidx.compose.ui.platform.LocalView
+import com.trezanix.mytreza.presentation.components.AestheticDatePicker
+import com.trezanix.mytreza.presentation.components.AestheticTimePicker
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.Calendar
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,6 +48,7 @@ fun AddTransactionScreen(
     viewModel: AddTransactionViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val view = LocalView.current
     val uiState by viewModel.uiState.collectAsState()
 
     val amount by viewModel.amount.collectAsState()
@@ -60,6 +68,40 @@ fun AddTransactionScreen(
     val selectedCategory = categoryList.find { it.id == selectedCategoryId }
     val sourceWallet = walletList.find { it.id == selectedSourceWalletId }
     val targetWallet = walletList.find { it.id == selectedTargetWalletId }
+
+    val calendar = remember { Calendar.getInstance() }
+    
+    LaunchedEffect(date) {
+        calendar.time = date
+    }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    if (showDatePicker) {
+        AestheticDatePicker(
+            date = date,
+            onDismiss = { showDatePicker = false },
+            onConfirm = {
+                calendar.timeInMillis = it
+                showDatePicker = false
+                showTimePicker = true
+            }
+        )
+    }
+
+    if (showTimePicker) {
+        AestheticTimePicker(
+            date = calendar.time,
+            onDismiss = { showTimePicker = false },
+            onConfirm = { hour, minute ->
+                calendar.set(Calendar.HOUR_OF_DAY, hour)
+                calendar.set(Calendar.MINUTE, minute)
+                viewModel.date.value = calendar.time
+                showTimePicker = false
+            }
+        )
+    }
 
     LaunchedEffect(uiState) {
         when (val state = uiState) {
@@ -137,13 +179,14 @@ fun AddTransactionScreen(
 
             // 3. Wallet & Category Selection
             if (transactionType == "TRANSFER") {
-                AestheticDropdown(
+                AestheticWalletDropdown(
                     label = "Dari Dompet",
                     value = sourceWallet?.name ?: "Pilih Sumber",
                     items = walletList,
                     onItemSelected = { viewModel.selectedSourceWalletId.value = it.id }
                 )
-                AestheticDropdown(
+                 // NOTE: AestheticCategoryDropdown is used below, but here we need WalletDropdown for target too
+                AestheticWalletDropdown(
                     label = "Ke Dompet",
                     value = targetWallet?.name ?: "Pilih Tujuan",
                     items = walletList,
@@ -167,7 +210,7 @@ fun AddTransactionScreen(
                     )
                 )
             } else {
-                AestheticDropdown(
+                AestheticWalletDropdown(
                     label = "Dompet",
                     value = selectedWallet?.name ?: "Pilih Dompet",
                     items = walletList,
@@ -187,21 +230,29 @@ fun AddTransactionScreen(
             }
 
             // 4. Date Picker
-            OutlinedTextField(
-                value = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(date),
-                onValueChange = {},
-                label = { Text("Tanggal") },
-                readOnly = true,
-                trailingIcon = { Icon(Icons.Default.CalendarToday, null, tint = Color.Gray) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = themeColor,
-                    unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(date),
+                    onValueChange = {},
+                    label = { Text("Tanggal") },
+                    readOnly = true,
+                    trailingIcon = { Icon(Icons.Default.CalendarToday, null, tint = Color.Gray) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = themeColor,
+                        unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
                 )
-            )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable { showDatePicker = true }
+                )
+            }
 
             // 5. Note Input
             OutlinedTextField(
@@ -296,65 +347,5 @@ fun TypeTab(text: String, isSelected: Boolean, color: Color, onClick: () -> Unit
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             style = MaterialTheme.typography.bodyMedium
         )
-    }
-}
-
-@Composable
-fun AestheticDropdown(label: String, value: String, items: List<Wallet>, onItemSelected: (Wallet) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    
-    Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = Color.Gray, modifier = Modifier.padding(bottom = 8.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.White)
-                .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                .clickable { expanded = true }
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(text = value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                Icon(Icons.Default.ArrowDownward, null, tint = Color.Gray)
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth(0.9f).background(Color.White)) {
-                items.forEach { wallet ->
-                    DropdownMenuItem(text = { Text(wallet.name) }, onClick = { onItemSelected(wallet); expanded = false })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AestheticCategoryDropdown(label: String, value: String, items: List<Category>, onItemSelected: (Category) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = Color.Gray, modifier = Modifier.padding(bottom = 8.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.White)
-                .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                .clickable { expanded = true }
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(text = value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                Icon(Icons.Default.ArrowDownward, null, tint = Color.Gray)
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth(0.9f).background(Color.White)) {
-                items.forEach { category ->
-                    DropdownMenuItem(text = { Text(category.name) }, onClick = { onItemSelected(category); expanded = false })
-                }
-            }
-        }
     }
 }

@@ -75,13 +75,31 @@ fun TransactionDetailSheet(
             DetailRow(icon = Icons.Outlined.AccountBalanceWallet, label = "Dompet", value = transaction.walletName)
 
             // Format Tanggal Cantik
+            // Format Tanggal Cantik
+            // Format Tanggal Cantik
             val formattedDate = try {
-                val parser = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val formatter = SimpleDateFormat("EEEE, dd MMMM yyyy", Locale("id", "ID"))
-                val dateObj = parser.parse(transaction.date)
+                // Determine pattern
+                val dateString = transaction.date
+                val parser = when {
+                    dateString.contains("T") && dateString.contains("Z") -> SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }
+                    dateString.contains("T") -> SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                    else -> SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) // Fallback to SQL format
+                }
+                
+                val formatter = SimpleDateFormat("EEEE, dd MMMM yyyy, HH:mm", Locale("id", "ID"))
+                val dateObj = parser.parse(dateString)
                 formatter.format(dateObj!!)
             } catch (e: Exception) {
-                transaction.date
+                try {
+                    // Fallback for Legacy Data (Date Only or ISO with different precision)
+                    // Trying a more flexible ISO parser or just standard date
+                    val parserDate = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                    val formatter = SimpleDateFormat("EEEE, dd MMMM yyyy", Locale("id", "ID"))
+                    val dateObj = parserDate.parse(transaction.date)
+                    formatter.format(dateObj!!)
+                } catch (e2: Exception) {
+                    transaction.date
+                }
             }
             DetailRow(icon = Icons.Outlined.Today, label = "Tanggal", value = formattedDate)
 

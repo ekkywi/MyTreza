@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.util.Date
 
 @HiltViewModel
 class AddWalletViewModel @Inject constructor(
@@ -19,6 +20,9 @@ class AddWalletViewModel @Inject constructor(
     var initialBalance = MutableStateFlow("")
     var selectedColor = MutableStateFlow("#2196F3")
     var selectedIcon = MutableStateFlow("wallet_default")
+
+    private val _date = MutableStateFlow(Date())
+    val date = _date.asStateFlow()
 
     private val _uiState = MutableStateFlow<AddWalletUiState>(AddWalletUiState.Idle)
     val uiState = _uiState.asStateFlow()
