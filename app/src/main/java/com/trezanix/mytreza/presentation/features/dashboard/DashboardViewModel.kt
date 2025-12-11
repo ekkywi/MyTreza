@@ -39,6 +39,10 @@ class DashboardViewModel @Inject constructor(
     private val _userName = MutableStateFlow("Memuat...")
     val userName = _userName.asStateFlow()
 
+    // 6. Status Refreshing
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing = _isRefreshing.asStateFlow()
+
     // --- INITIALIZATION ---
     init {
         loadData()
@@ -52,35 +56,45 @@ class DashboardViewModel @Inject constructor(
             if (_recentTransactions.value.isEmpty()) {
                 _isLoading.value = true
             }
-
-            // 1. Ambil Profil User (Nama)
-            userRepository.getUserProfile()
-                .onSuccess { user ->
-                    _userName.value = user.fullName ?: "Kawan MyTreza"
-                }
-                .onFailure {
-                    _userName.value = "Kawan MyTreza"
-                }
-            // 2. Ambil Total Saldo (Sum of Wallets)
-            walletRepository.getWallets()
-                .onSuccess { wallets ->
-                    _totalBalance.value = wallets.sumOf { it.balance }
-                }
-                .onFailure {
-                    // Silent fail untuk saldo, user akan sadar jika saldo 0 atau error toast lain
-                }
-
-            // 3. Ambil 5 Transaksi Terakhir
-            walletRepository.getTransactions(page = 1, limit = 5)
-                .onSuccess { transactions ->
-                    _recentTransactions.value = transactions
-                }
-                .onFailure {
-                    // Handle error transaksi
-                }
-
+            fetchDashboardData()
             _isLoading.value = false
         }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            fetchDashboardData()
+            _isRefreshing.value = false
+        }
+    }
+
+    private suspend fun fetchDashboardData() {
+        // 1. Ambil Profil User (Nama)
+        userRepository.getUserProfile()
+            .onSuccess { user ->
+                _userName.value = user.fullName ?: "Kawan MyTreza"
+            }
+            .onFailure {
+                _userName.value = "Kawan MyTreza"
+            }
+        // 2. Ambil Total Saldo (Sum of Wallets)
+        walletRepository.getWallets()
+            .onSuccess { wallets ->
+                _totalBalance.value = wallets.sumOf { it.balance }
+            }
+            .onFailure {
+                // Silent fail untuk saldo, user akan sadar jika saldo 0 atau error toast lain
+            }
+
+        // 3. Ambil 5 Transaksi Terakhir
+        walletRepository.getTransactions(page = 1, limit = 5)
+            .onSuccess { transactions ->
+                _recentTransactions.value = transactions
+            }
+            .onFailure {
+                // Handle error transaksi
+            }
     }
 
     fun deleteTransaction(id: String) {

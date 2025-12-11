@@ -13,13 +13,18 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.lifecycle.SavedStateHandle
 import javax.inject.Inject
 
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(
     private val walletRepository: WalletRepository,
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val _transactionId = savedStateHandle.get<String>("transactionId")
+    val isEditMode = MutableStateFlow(_transactionId != null)
 
     // --- STATE VARIABLES (Flow) ---
     val amount = MutableStateFlow("")
@@ -51,6 +56,9 @@ class AddTransactionViewModel @Inject constructor(
 
     init {
         loadData()
+        if (_transactionId != null) {
+            loadTransaction(_transactionId)
+        }
     }
 
     private fun loadData() {
@@ -59,6 +67,35 @@ class AddTransactionViewModel @Inject constructor(
             walletRepository.getWallets().onSuccess { _wallets.value = it }
             // Load Categories
             categoryRepository.getCategories().onSuccess { _categories.value = it }
+        }
+    }
+
+    private fun loadTransaction(id: String) {
+        viewModelScope.launch {
+            walletRepository.getTransactionById(id)
+                .onSuccess { trx ->
+                    val bigDecimalAmount = java.math.BigDecimal(trx.amount).toBigInteger().toString()
+                    amount.value = bigDecimalAmount
+                    note.value = trx.description ?: ""
+                    transactionType.value = trx.type
+                    selectedWalletId.value = trx.walletId
+                    selectedCategoryId.value = trx.categoryId
+                    
+                    // Parse Date String (API format) to Date Object
+                    try {
+                        // Format API: "2024-12-11T04:30:00.000Z" (Example)
+                        // SimpleDateFormat local parser
+                        val parser = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) // Adjust if needed
+                        // Fallback logic derived from DashboardScreen
+                         val complexParser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                         date.value = complexParser.parse(trx.date) ?: Date()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                .onFailure {
+                    _uiState.value = AddTransactionUiState.Error("Gagal memuat data transaksi")
+                }
         }
     }
 
@@ -86,18 +123,36 @@ class AddTransactionViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AddTransactionUiState.Loading
 
-            // Panggil Repository (Parameter sudah sesuai)
-            walletRepository.createTransaction(
-                walletId = currentWalletId,
-                amount = currentAmount,
-                type = currentType,
-                date = currentDate,
-                description = currentNote,
-                categoryId = currentCategoryId
-            ).onSuccess {
-                _uiState.value = AddTransactionUiState.Success
-            }.onFailure { e ->
-                _uiState.value = AddTransactionUiState.Error(e.message ?: "Gagal menyimpan transaksi")
+            // Cek apakah Edit Mode
+            if (_transactionId != null) {
+                // Update Logic
+                 walletRepository.updateTransaction(
+                    id = _transactionId,
+                    walletId = currentWalletId,
+                    amount = currentAmount,
+                    type = currentType,
+                    date = currentDate,
+                    description = currentNote,
+                    categoryId = currentCategoryId
+                ).onSuccess {
+                    _uiState.value = AddTransactionUiState.Success
+                }.onFailure { e ->
+                    _uiState.value = AddTransactionUiState.Error(e.message ?: "Gagal mengupdate transaksi")
+                }
+            } else {
+                // Create Logic
+                walletRepository.createTransaction(
+                    walletId = currentWalletId,
+                    amount = currentAmount,
+                    type = currentType,
+                    date = currentDate,
+                    description = currentNote,
+                    categoryId = currentCategoryId
+                ).onSuccess {
+                    _uiState.value = AddTransactionUiState.Success
+                }.onFailure { e ->
+                    _uiState.value = AddTransactionUiState.Error(e.message ?: "Gagal menyimpan transaksi")
+                }
             }
         }
     }

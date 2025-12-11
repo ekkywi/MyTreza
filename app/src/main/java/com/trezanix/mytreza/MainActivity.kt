@@ -16,12 +16,18 @@ import com.trezanix.mytreza.presentation.MainScreen
 import com.trezanix.mytreza.presentation.features.auth.LoginScreen
 import com.trezanix.mytreza.presentation.features.auth.RegisterScreen
 import com.trezanix.mytreza.presentation.features.splash.SplashScreen
-import com.trezanix.mytreza.presentation.features.transaction.add.AddTransactionScreen
+import com.trezanix.mytreza.presentation.features.transaction.add.TransactionFormScreen
 import com.trezanix.mytreza.presentation.features.wallet.add.AddWalletScreen
 import com.trezanix.mytreza.presentation.features.wallet.detail.WalletDetailScreen
 import com.trezanix.mytreza.presentation.features.wallet.edit.EditWalletScreen
 import com.trezanix.mytreza.presentation.theme.MyTrezaTheme
 import dagger.hilt.android.AndroidEntryPoint
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.Date
+import com.trezanix.mytreza.domain.model.Transaction
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -81,6 +87,10 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNavigateToAddTransaction = {
                                     rootNavController.navigate("add_transaction")
+                                },
+                                onNavigateToEditTransaction = { trx ->
+                                    val route = "add_transaction?transactionId=${trx.id}"
+                                    rootNavController.navigate(route)
                                 }
                             )
                         }
@@ -115,9 +125,14 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        composable("add_transaction") {
-                            AddTransactionScreen(
-                                onNavigateUp = { rootNavController.popBackStack() }
+                        composable(
+                            route = "add_transaction?transactionId={transactionId}",
+                            arguments = listOf(
+                                navArgument("transactionId") { type = NavType.StringType; nullable = true }
+                            )
+                        ) {
+                            TransactionFormScreen(
+                                navController = rootNavController
                             )
                         }
                     }

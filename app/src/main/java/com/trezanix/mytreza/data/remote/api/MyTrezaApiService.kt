@@ -96,6 +96,12 @@ interface MyTrezaApiService {
         @Body request: CreateTransferRequest
     ): Response<BaseResponse<Any>>
 
+    @PUT("transactions/{id}")
+    suspend fun updateTransaction(
+        @Path("id") id: String,
+        @Body request: com.trezanix.mytreza.data.remote.dto.UpdateTransactionRequest
+    ): Response<BaseResponse<TransactionDto>>
+
     @DELETE("transactions/{id}")
     suspend fun deleteTransaction(
         @Path("id") id: String

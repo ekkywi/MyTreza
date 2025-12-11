@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 import com.trezanix.mytreza.data.remote.dto.TransactionDto
 import com.trezanix.mytreza.domain.model.Transaction
 import com.trezanix.mytreza.presentation.features.transaction.detail.TransactionDetailSheet // Pastikan import ini ada
@@ -42,14 +44,17 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
+    onNavigateToEditTransaction: (Transaction) -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     // --- STATE COLLECTORS ---
     val totalBalance by viewModel.totalBalance.collectAsState()
     val recentTransactions by viewModel.recentTransactions.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState() // [NEW] Refresh State
     val message by viewModel.message.collectAsState() // Pesan Toast (Sukses/Error)
 
     // --- LOCAL STATE ---
@@ -76,6 +81,7 @@ fun DashboardScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                // Jangan loadData lagi jika sedang refreshing manual, tapi biasanya aman
                 viewModel.loadData()
             }
         }
@@ -88,76 +94,81 @@ fun DashboardScreen(
     Scaffold(
         containerColor = Color(0xFFF5F7FA)
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(bottom = 100.dp)
+        // [NEW] Wrapper PullToRefreshBox
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.padding(padding)
         ) {
-            // 1. HEADER (Saldo)
-            item {
-                DashboardHeader(
-                    totalBalance = totalBalance,
-                    isLoading = isLoading,
-                    userName = userName
-                )
-            }
-
-            // 2. QUICK ACTIONS
-            item {
-                Column(
-                    modifier = Modifier
-                        .offset(y = (-30).dp)
-                        .padding(horizontal = 24.dp)
-                ) {
-                    QuickActionsGrid()
-                }
-            }
-
-            // 3. TITLE TRANSAKSI
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Transaksi Terakhir",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "Lihat Semua",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = BrandBlue,
-                        modifier = Modifier.clickable { /* TODO: Navigate to History */ }
-                    )
-                }
-            }
-
-            // 4. LIST TRANSAKSI
-            if (isLoading && recentTransactions.isEmpty()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
+                // 1. HEADER (Saldo)
                 item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BrandBlue, modifier = Modifier.size(32.dp))
+                    DashboardHeader(
+                        totalBalance = totalBalance,
+                        isLoading = isLoading,
+                        userName = userName
+                    )
+                }
+
+                // 2. QUICK ACTIONS
+                item {
+                    Column(
+                        modifier = Modifier
+                            .offset(y = (-30).dp)
+                            .padding(horizontal = 24.dp)
+                    ) {
+                        QuickActionsGrid()
                     }
                 }
-            } else if (recentTransactions.isEmpty()) {
+
+                // 3. TITLE TRANSAKSI
                 item {
-                    EmptyTransactionState()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Transaksi Terakhir",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = "Lihat Semua",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = BrandBlue,
+                            modifier = Modifier.clickable { /* TODO: Navigate to History */ }
+                        )
+                    }
                 }
-            } else {
-                items(recentTransactions) { trxDto ->
-                    // Wrapper Box untuk menangani Klik Item
-                    Box(modifier = Modifier.clickable {
-                        // Konversi DTO ke Domain Model saat diklik
-                        selectedTransaction = trxDto.toDomain()
-                    }) {
-                        TransactionItem(transaction = trxDto)
+
+                // 4. LIST TRANSAKSI
+                if (isLoading && recentTransactions.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = BrandBlue, modifier = Modifier.size(32.dp))
+                        }
+                    }
+                } else if (recentTransactions.isEmpty()) {
+                    item {
+                        EmptyTransactionState()
+                    }
+                } else {
+                    items(recentTransactions) { trxDto ->
+                        // Wrapper Box untuk menangani Klik Item
+                        Box(modifier = Modifier.clickable {
+                            // Konversi DTO ke Domain Model saat diklik
+                            selectedTransaction = trxDto.toDomain()
+                        }) {
+                            TransactionItem(transaction = trxDto)
+                        }
                     }
                 }
             }
@@ -170,8 +181,10 @@ fun DashboardScreen(
             transaction = selectedTransaction!!,
             onDismiss = { selectedTransaction = null },
             onEdit = {
+                selectedTransaction?.let { trx ->
+                    onNavigateToEditTransaction(trx)
+                }
                 selectedTransaction = null
-                // TODO: Navigasi ke Edit
             },
             onDelete = {
                 // UPDATE: Jangan langsung hapus, tapi munculkan Dialog
@@ -223,7 +236,9 @@ fun TransactionDto.toDomain(): Transaction {
         date = this.date,
         type = this.type,
         categoryName = this.category?.name ?: "Umum",
-        walletName = this.wallet?.name ?: "Dompet"
+        walletName = this.wallet?.name ?: "Dompet",
+        categoryId = this.categoryId,
+        walletId = this.walletId
     )
 }
 

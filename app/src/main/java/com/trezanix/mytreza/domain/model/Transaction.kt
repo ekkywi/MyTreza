@@ -7,5 +7,7 @@ data class Transaction(
     val date: String,
     val type: String, // INCOME / EXPENSE
     val categoryName: String,
-    val walletName: String
+    val walletName: String,
+    val categoryId: String? = null,
+    val walletId: String? = null
 )

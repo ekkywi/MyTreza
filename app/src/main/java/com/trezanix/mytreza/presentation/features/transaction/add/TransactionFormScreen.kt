@@ -2,7 +2,6 @@ package com.trezanix.mytreza.presentation.features.transaction.add
 
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,7 +10,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
@@ -21,34 +19,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.trezanix.mytreza.domain.model.Category
-import com.trezanix.mytreza.domain.model.Wallet
-import com.trezanix.mytreza.presentation.components.AestheticWalletDropdown
 import com.trezanix.mytreza.presentation.components.AestheticCategoryDropdown
+import com.trezanix.mytreza.presentation.components.AestheticDatePicker
+import com.trezanix.mytreza.presentation.components.AestheticTimePicker
+import com.trezanix.mytreza.presentation.components.AestheticWalletDropdown
 import com.trezanix.mytreza.presentation.theme.AccentGreen
 import com.trezanix.mytreza.presentation.theme.AccentRed
 import com.trezanix.mytreza.presentation.theme.BrandBlue
-import androidx.compose.ui.platform.LocalView
-import com.trezanix.mytreza.presentation.components.AestheticDatePicker
-import com.trezanix.mytreza.presentation.components.AestheticTimePicker
 import java.text.SimpleDateFormat
-import java.util.Locale
 import java.util.Calendar
-import java.util.Date
+import java.util.Locale
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTransactionScreen(
-    onNavigateUp: () -> Unit,
+fun TransactionFormScreen(
+    navController: NavController,
     viewModel: AddTransactionViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val view = LocalView.current
     val uiState by viewModel.uiState.collectAsState()
 
     val amount by viewModel.amount.collectAsState()
@@ -60,6 +55,8 @@ fun AddTransactionScreen(
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsState()
     val selectedSourceWalletId by viewModel.selectedSourceWalletId.collectAsState()
     val selectedTargetWalletId by viewModel.selectedTargetWalletId.collectAsState()
+    val isEditMode by viewModel.isEditMode.collectAsState()
+    val adminFee by viewModel.adminFee.collectAsState()
 
     val walletList by viewModel.wallets.collectAsState()
     val categoryList by viewModel.categories.collectAsState()
@@ -106,8 +103,8 @@ fun AddTransactionScreen(
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is AddTransactionUiState.Success -> {
-                Toast.makeText(context, "Transaksi Berhasil Disimpan!", Toast.LENGTH_SHORT).show()
-                onNavigateUp()
+                Toast.makeText(context, if (isEditMode) "Transaksi Berhasil Diupdate!" else "Transaksi Berhasil Disimpan!", Toast.LENGTH_SHORT).show()
+                navController.popBackStack()
                 viewModel.resetState()
             }
             is AddTransactionUiState.Error -> {
@@ -127,9 +124,16 @@ fun AddTransactionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (transactionType == "TRANSFER") "Transfer" else "Transaksi Baru", fontWeight = FontWeight.SemiBold) },
+                title = { 
+                    Text(
+                        if (isEditMode) "Edit Transaksi" 
+                        else if (transactionType == "TRANSFER") "Transfer" 
+                        else "Transaksi Baru", 
+                        fontWeight = FontWeight.SemiBold
+                    ) 
+                },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
                     }
                 },
@@ -149,6 +153,7 @@ fun AddTransactionScreen(
             // 1. Transaction Type Selector
             TransactionTypeSelector(
                 selectedType = transactionType,
+                enabled = !isEditMode,
                 onTypeSelected = {
                     viewModel.transactionType.value = it
                     viewModel.selectedCategoryId.value = null
@@ -183,6 +188,7 @@ fun AddTransactionScreen(
                     label = "Dari Dompet",
                     value = sourceWallet?.name ?: "Pilih Sumber",
                     items = walletList,
+                    enabled = !isEditMode,
                     onItemSelected = { viewModel.selectedSourceWalletId.value = it.id }
                 )
                  // NOTE: AestheticCategoryDropdown is used below, but here we need WalletDropdown for target too
@@ -190,11 +196,11 @@ fun AddTransactionScreen(
                     label = "Ke Dompet",
                     value = targetWallet?.name ?: "Pilih Tujuan",
                     items = walletList,
+                    enabled = !isEditMode,
                     onItemSelected = { viewModel.selectedTargetWalletId.value = it.id }
                 )
 
                 // Admin Fee Input
-                val adminFee by viewModel.adminFee.collectAsState()
                 OutlinedTextField(
                     value = adminFee,
                     onValueChange = { if (it.all { char -> char.isDigit() }) viewModel.adminFee.value = it },
@@ -214,6 +220,7 @@ fun AddTransactionScreen(
                     label = "Dompet",
                     value = selectedWallet?.name ?: "Pilih Dompet",
                     items = walletList,
+                    enabled = !isEditMode,
                     onItemSelected = { viewModel.selectedWalletId.value = it.id }
                 )
 
@@ -290,7 +297,7 @@ fun AddTransactionScreen(
                 } else {
                     Icon(Icons.Default.Check, null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Simpan Transaksi", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(if (isEditMode) "Update Transaksi" else "Simpan Transaksi", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -298,11 +305,11 @@ fun AddTransactionScreen(
 }
 
 @Composable
-fun TransactionTypeSelector(selectedType: String, onTypeSelected: (String) -> Unit) {
+fun TransactionTypeSelector(selectedType: String, enabled: Boolean = true, onTypeSelected: (String) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 0.dp) // Removed padding to fit full width of parent padding
+            .padding(horizontal = 0.dp)
             .background(Color.White, RoundedCornerShape(16.dp))
             .padding(4.dp),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -311,6 +318,7 @@ fun TransactionTypeSelector(selectedType: String, onTypeSelected: (String) -> Un
             text = "Pemasukan",
             isSelected = selectedType == "INCOME",
             color = AccentGreen,
+            enabled = enabled,
             onClick = { onTypeSelected("INCOME") },
             modifier = Modifier.weight(1f)
         )
@@ -318,6 +326,7 @@ fun TransactionTypeSelector(selectedType: String, onTypeSelected: (String) -> Un
             text = "Pengeluaran",
             isSelected = selectedType == "EXPENSE",
             color = AccentRed,
+            enabled = enabled,
             onClick = { onTypeSelected("EXPENSE") },
             modifier = Modifier.weight(1f)
         )
@@ -325,6 +334,7 @@ fun TransactionTypeSelector(selectedType: String, onTypeSelected: (String) -> Un
             text = "Transfer",
             isSelected = selectedType == "TRANSFER",
             color = BrandBlue,
+            enabled = enabled,
             onClick = { onTypeSelected("TRANSFER") },
             modifier = Modifier.weight(1f)
         )
@@ -332,18 +342,19 @@ fun TransactionTypeSelector(selectedType: String, onTypeSelected: (String) -> Un
 }
 
 @Composable
-fun TypeTab(text: String, isSelected: Boolean, color: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun TypeTab(text: String, isSelected: Boolean, color: Color, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val alpha = if (enabled || isSelected) 1f else 0.5f
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .background(if (isSelected) color.copy(alpha = 0.1f) else Color.Transparent)
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = if (isSelected) color else Color.Gray,
+            color = if (isSelected) color else Color.Gray.copy(alpha = alpha),
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             style = MaterialTheme.typography.bodyMedium
         )

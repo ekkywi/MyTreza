@@ -242,8 +242,10 @@ class WalletRepositoryImpl @Inject constructor(
             description = this.description,
             date = this.date,
             type = this.type,
-            categoryName = this.category?.name ?: "Lainnya",
-            walletName = this.wallet?.name ?: ""
+            categoryName = this.category?.name ?: "Umum",
+            walletName = this.wallet?.name ?: "Dompet",
+            categoryId = this.categoryId,
+            walletId = this.walletId
         )
     }
 
@@ -255,6 +257,58 @@ class WalletRepositoryImpl @Inject constructor(
             } else {
                 val errorMsg = response.body()?.message ?: response.message()
                 Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateTransaction(
+        id: String,
+        amount: Double,
+        type: String,
+        date: String,
+        description: String?,
+        categoryId: String?,
+        walletId: String
+    ): Result<Transaction> {
+        return try {
+            val request = com.trezanix.mytreza.data.remote.dto.UpdateTransactionRequest(
+                amount = amount,
+                type = type,
+                date = date,
+                description = description,
+                categoryId = categoryId,
+                walletId = walletId
+            )
+            val response = api.updateTransaction(id, request)
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(response.body()!!.data!!.toDomain())
+            } else {
+                Result.failure(Exception(response.message()))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // --- 9. GET TRANSACTION BY ID ---
+    override suspend fun getTransactionById(id: String): Result<Transaction> {
+        // Karena API tidak punya endpoint khusus GET /transactions/{id},
+        // Kita gunakan endpoint list dan filter manual (Temporary Workaround)
+        // Idealnya: Minta Backend Engineer buat endpoint GET /transactions/{id}
+        return try {
+            val response = api.getTransactions(page = 1, limit = 100) // Ambil cukup banyak biar ketemu
+            if (response.isSuccessful && response.body()?.success == true) {
+                val items = response.body()?.data?.items ?: emptyList()
+                val found = items.find { it.id == id }
+                if (found != null) {
+                    Result.success(found.toDomain())
+                } else {
+                    Result.failure(Exception("Transaksi tidak ditemukan"))
+                }
+            } else {
+                Result.failure(Exception(response.message()))
             }
         } catch (e: Exception) {
             Result.failure(e)

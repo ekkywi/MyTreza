@@ -55,4 +55,15 @@ interface WalletRepository {
     ): Result<Boolean>
 
     suspend fun deleteTransaction(id: String): Result<Boolean>
+
+    suspend fun updateTransaction(
+        id: String,
+        amount: Double,
+        type: String,
+        date: String,
+        description: String?,
+        categoryId: String?,
+        walletId: String
+    ): Result<Transaction>
+    suspend fun getTransactionById(id: String): Result<Transaction>
 }

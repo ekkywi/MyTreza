@@ -51,6 +51,7 @@ fun AestheticWalletDropdown(
     label: String,
     value: String,
     items: List<Wallet>,
+    enabled: Boolean = true,
     onItemSelected: (Wallet) -> Unit
 ) {
     var showSheet by remember { mutableStateOf(false) }
@@ -69,13 +70,13 @@ fun AestheticWalletDropdown(
                 .fillMaxWidth()
                 .height(56.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Color.Companion.White)
+                .background(if (enabled) Color.Companion.White else Color(0xFFF5F5F5)) // Gray out if disabled
                 .border(
                     1.dp,
                     Color.Companion.LightGray.copy(alpha = 0.5f),
                     androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
                 )
-                .clickable { showSheet = true }
+                .clickable(enabled = enabled) { showSheet = true }
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Companion.CenterStart
         ) {

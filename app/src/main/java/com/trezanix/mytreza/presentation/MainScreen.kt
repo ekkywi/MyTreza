@@ -35,6 +35,7 @@ import com.trezanix.mytreza.presentation.features.profile.ProfileScreen
 import com.trezanix.mytreza.presentation.features.wallet.WalletScreen
 import com.trezanix.mytreza.presentation.navigation.BottomNavItem
 import com.trezanix.mytreza.presentation.theme.BrandBlue
+import com.trezanix.mytreza.domain.model.Transaction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +43,8 @@ fun MainScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToWalletDetail: (String) -> Unit,
     onNavigateToAddWallet: () -> Unit,
-    onNavigateToAddTransaction: () -> Unit
+    onNavigateToAddTransaction: () -> Unit,
+    onNavigateToEditTransaction: (Transaction) -> Unit
 ) {
     val navController = rememberNavController()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -142,7 +144,9 @@ fun MainScreen(
             startDestination = BottomNavItem.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(BottomNavItem.Home.route) { DashboardScreen() }
+            composable(BottomNavItem.Home.route) { 
+                DashboardScreen(onNavigateToEditTransaction = onNavigateToEditTransaction) 
+            }
 
             composable(BottomNavItem.History.route) { HistoryScreen() }
 
