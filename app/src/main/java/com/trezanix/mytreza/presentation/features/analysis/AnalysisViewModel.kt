@@ -58,7 +58,7 @@ class AnalysisViewModel @Inject constructor(
         }
     }
 
-    private fun loadAnalysisData() {
+    fun loadAnalysisData() {
         viewModelScope.launch {
             _isLoading.value = true
 

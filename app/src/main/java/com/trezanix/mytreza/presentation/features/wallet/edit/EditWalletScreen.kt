@@ -183,7 +183,11 @@ fun EditWalletScreen(
 
                 // Action Buttons
                 Button(
-                    onClick = { viewModel.updateWallet {} },
+                    onClick = {
+                        viewModel.updateWallet {
+                            onNavigateUp()
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)

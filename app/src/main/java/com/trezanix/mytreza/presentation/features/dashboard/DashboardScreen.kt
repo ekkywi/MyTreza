@@ -43,6 +43,7 @@ import com.trezanix.mytreza.presentation.util.getGreetingMessage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.trezanix.mytreza.presentation.util.getCategoryIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -238,7 +239,8 @@ fun TransactionDto.toDomain(): Transaction {
         categoryName = this.category?.name ?: "Umum",
         walletName = this.wallet?.name ?: "Dompet",
         categoryId = this.categoryId,
-        walletId = this.walletId
+        walletId = this.walletId,
+        categoryIcon = this.category?.icon
     )
 }
 
@@ -330,7 +332,11 @@ fun TransactionItem(transaction: TransactionDto) {
 
     val walletName = transaction.wallet?.name ?: "Dompet"
     val isTransfer = transaction.category?.name?.contains("Transfer", true) == true
-    val displayIcon = if (isTransfer) Icons.Default.SwapHoriz else icon
+    
+    // Dynamic Icon Logic
+    val categoryIconName = transaction.category?.icon
+    val databaseIcon = if (categoryIconName != null) getCategoryIcon(categoryIconName) else null
+    val displayIcon = databaseIcon ?: (if (isTransfer) Icons.Default.SwapHoriz else icon)
 
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).background(Color.White, RoundedCornerShape(16.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(iconBgColor), contentAlignment = Alignment.Center) {

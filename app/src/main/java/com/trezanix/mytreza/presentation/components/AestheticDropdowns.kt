@@ -44,6 +44,7 @@ import com.trezanix.mytreza.domain.model.Wallet
 import com.trezanix.mytreza.presentation.theme.AccentGreen
 import com.trezanix.mytreza.presentation.theme.AccentRed
 import kotlinx.coroutines.launch
+import com.trezanix.mytreza.presentation.util.getCategoryIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -184,95 +185,81 @@ fun AestheticCategoryDropdown(
     label: String,
     value: String,
     items: List<Category>,
-    onItemSelected: (com.trezanix.mytreza.domain.model.Category) -> Unit
+    onItemSelected: (Category) -> Unit
 ) {
-    var showSheet by _root_ide_package_.androidx.compose.runtime.remember {
-        _root_ide_package_.androidx.compose.runtime.mutableStateOf(
-            false
-        )
-    }
-    val sheetState = _root_ide_package_.androidx.compose.material3.rememberModalBottomSheetState()
-    val scope = _root_ide_package_.androidx.compose.runtime.rememberCoroutineScope()
+    var showSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
-    _root_ide_package_.androidx.compose.foundation.layout.Column {
-        _root_ide_package_.androidx.compose.material3.Text(
+    Column {
+        Text(
             text = label,
-            style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-            color = androidx.compose.ui.graphics.Color.Companion.Gray,
-            modifier = androidx.compose.ui.Modifier.Companion.padding(bottom = 8.dp)
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.Gray,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
-        _root_ide_package_.androidx.compose.foundation.layout.Box(
-            modifier = androidx.compose.ui.Modifier.Companion
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .clip(_root_ide_package_.androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
-                .background(androidx.compose.ui.graphics.Color.Companion.White)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White)
                 .border(
                     1.dp,
-                    androidx.compose.ui.graphics.Color.Companion.LightGray.copy(alpha = 0.5f),
-                    _root_ide_package_.androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                    Color.LightGray.copy(alpha = 0.5f),
+                    RoundedCornerShape(16.dp)
                 )
                 .clickable { showSheet = true }
                 .padding(horizontal = 16.dp),
-            contentAlignment = androidx.compose.ui.Alignment.Companion.CenterStart
+            contentAlignment = Alignment.CenterStart
         ) {
-            _root_ide_package_.androidx.compose.foundation.layout.Row(
-                modifier = androidx.compose.ui.Modifier.Companion.fillMaxWidth(),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.Companion.CenterVertically
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                _root_ide_package_.androidx.compose.material3.Text(
+                Text(
                     text = value,
-                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Companion.Medium
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
                 )
-                _root_ide_package_.androidx.compose.material3.Icon(
-                    androidx.compose.material.icons.Icons.Default.ArrowDownward,
+                Icon(
+                    Icons.Default.ArrowDownward,
                     null,
-                    tint = androidx.compose.ui.graphics.Color.Companion.Gray
+                    tint = Color.Gray
                 )
             }
         }
     }
 
     if (showSheet) {
-        _root_ide_package_.androidx.compose.material3.ModalBottomSheet(
+        ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState,
-            containerColor = androidx.compose.ui.graphics.Color.Companion.White
+            containerColor = Color.White
         ) {
-            _root_ide_package_.androidx.compose.foundation.layout.Column(
-                modifier = androidx.compose.ui.Modifier.Companion
+            Column(
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 48.dp)
             ) {
-                _root_ide_package_.androidx.compose.material3.Text(
+                Text(
                     text = "Pilih Kategori",
-                    style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Companion.Bold,
-                    modifier = androidx.compose.ui.Modifier.Companion.padding(bottom = 16.dp)
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                _root_ide_package_.androidx.compose.foundation.lazy.LazyColumn(
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
-                        12.dp
-                    )
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(items) { category ->
-                        _root_ide_package_.androidx.compose.foundation.layout.Row(
-                            modifier = androidx.compose.ui.Modifier.Companion
+                        Row(
+                            modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(
-                                    _root_ide_package_.androidx.compose.foundation.shape.RoundedCornerShape(
-                                        16.dp
-                                    )
-                                )
-                                .background(
-                                    _root_ide_package_.androidx.compose.ui.graphics.Color(
-                                        0xFFF8F9FA
-                                    )
-                                )
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color(0xFFF8F9FA))
                                 .clickable {
                                     scope.launch { sheetState.hide() }.invokeOnCompletion {
                                         if (!sheetState.isVisible) {
@@ -282,34 +269,29 @@ fun AestheticCategoryDropdown(
                                     }
                                 }
                                 .padding(16.dp),
-                            verticalAlignment = androidx.compose.ui.Alignment.Companion.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            _root_ide_package_.androidx.compose.foundation.layout.Box(
-                                modifier = androidx.compose.ui.Modifier.Companion
+                            Box(
+                                modifier = Modifier
                                     .size(40.dp)
                                     .background(
-                                        androidx.compose.ui.graphics.Color.Companion.LightGray.copy(
-                                            alpha = 0.2f
-                                        ),
-                                        _root_ide_package_.androidx.compose.foundation.shape.CircleShape
+                                        Color.LightGray.copy(alpha = 0.2f),
+                                        CircleShape
                                     ),
-                                contentAlignment = androidx.compose.ui.Alignment.Companion.Center
+                                contentAlignment = Alignment.Center
                             ) {
-                                _root_ide_package_.androidx.compose.material3.Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.Default.Category,
+                                val iconVector = if (category.icon != null) getCategoryIcon(category.icon) else Icons.Default.Category
+                                Icon(
+                                    imageVector = iconVector,
                                     contentDescription = null,
-                                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             }
-                            _root_ide_package_.androidx.compose.foundation.layout.Spacer(
-                                modifier = androidx.compose.ui.Modifier.Companion.width(
-                                    16.dp
-                                )
-                            )
-                            _root_ide_package_.androidx.compose.material3.Text(
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text(
                                 text = category.name,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Companion.Bold,
-                                style = androidx.compose.material3.MaterialTheme.typography.bodyLarge
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyLarge
                             )
                         }
                     }
@@ -321,10 +303,7 @@ fun AestheticCategoryDropdown(
 
 private fun formatCurrency(amount: Double): String {
     val format = java.text.NumberFormat.getCurrencyInstance(
-        _root_ide_package_.java.util.Locale(
-            "id",
-            "ID"
-        )
+        java.util.Locale("id", "ID")
     )
     return format.format(amount).replace("Rp", "Rp ").replace(",00", "")
 }

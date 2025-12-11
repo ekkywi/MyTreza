@@ -245,7 +245,8 @@ class WalletRepositoryImpl @Inject constructor(
             categoryName = this.category?.name ?: "Umum",
             walletName = this.wallet?.name ?: "Dompet",
             categoryId = this.categoryId,
-            walletId = this.walletId
+            walletId = this.walletId,
+            categoryIcon = this.category?.icon
         )
     }
 
