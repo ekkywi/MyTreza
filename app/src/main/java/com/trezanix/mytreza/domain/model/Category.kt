@@ -4,5 +4,8 @@ data class Category(
     val id: String,
     val name: String,
     val type: String,
-    val icon: String? = null
+    val icon: String? = "category",
+    val color: String? = "#000000",
+    val userId: String? = null,
+    val createdAt: String? = null
 )

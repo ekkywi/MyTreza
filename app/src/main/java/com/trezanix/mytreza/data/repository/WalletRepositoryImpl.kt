@@ -12,6 +12,7 @@ import com.trezanix.mytreza.data.remote.dto.CreateTransferRequest
 import com.trezanix.mytreza.domain.model.Transaction
 import com.trezanix.mytreza.domain.model.Wallet
 import com.trezanix.mytreza.domain.model.WalletStats
+import com.trezanix.mytreza.domain.model.Category
 import com.trezanix.mytreza.domain.repository.WalletRepository
 import javax.inject.Inject
 
@@ -314,5 +315,25 @@ class WalletRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    override suspend fun getCategories(): Result<List<Category>> {
+        // TODO: Nanti ganti dengan API Call asli: api.getCategories()
+        // Sementara kita return list kosong atau dummy biar tidak error
+        return try {
+            // Jika Anda sudah punya endpoint, pakai ini:
+            // val response = api.getCategories()
+            // Result.success(response.data.map { it.toDomain() })
+
+            // Untuk sekarang agar bisa compile ViewModel:
+            Result.success(emptyList())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createCategory(name: String, type: String, icon: String, color: String): Result<Boolean> {
+        // TODO: Nanti sambungkan ke API
+        return Result.success(true)
     }
 }

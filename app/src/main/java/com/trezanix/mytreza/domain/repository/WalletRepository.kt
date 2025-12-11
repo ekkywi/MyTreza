@@ -4,6 +4,7 @@ import com.trezanix.mytreza.data.remote.dto.TransactionDto
 import com.trezanix.mytreza.domain.model.Transaction
 import com.trezanix.mytreza.domain.model.Wallet
 import com.trezanix.mytreza.domain.model.WalletStats
+import com.trezanix.mytreza.domain.model.Category
 
 interface WalletRepository {
     // Wallet CRUD
@@ -41,7 +42,7 @@ interface WalletRepository {
         type: String,
         date: String,
         description: String?,
-        categoryId: String? // <--- TAMBAHAN BARU
+        categoryId: String?
     ): Result<Transaction>
 
     suspend fun createTransfer(
@@ -65,5 +66,10 @@ interface WalletRepository {
         categoryId: String?,
         walletId: String
     ): Result<Transaction>
+
     suspend fun getTransactionById(id: String): Result<Transaction>
+
+    suspend fun getCategories(): Result<List<Category>>
+
+    suspend fun createCategory(name: String, type: String, icon: String, color: String): Result<Boolean>
 }

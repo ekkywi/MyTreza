@@ -1,9 +1,8 @@
 package com.trezanix.mytreza.presentation.features.profile
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,11 +13,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Category // [PENTING] Import Icon Category
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,12 +35,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.trezanix.mytreza.presentation.theme.AccentGreen
-import com.trezanix.mytreza.presentation.theme.AccentRed
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
+    onNavigateToCategory: () -> Unit, // [BARU] Callback untuk navigasi ke Kategori
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val name by viewModel.userName.collectAsState()
@@ -124,8 +123,18 @@ fun ProfileScreen(
                 ProfileOptionItem(icon = Icons.Default.Person, title = "Edit Profil", color = BrandBlue) {}
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.2f))
                 ProfileOptionItem(icon = Icons.Default.Lock, title = "Ubah Kata Sandi", color = BrandBlue) {}
-                HorizontalDivider(color = Color.LightGray.copy(alpha = 0.2f))
-                ProfileOptionItem(icon = Icons.Default.Settings, title = "Pengaturan Aplikasi", color = BrandBlue) {}
+                // [UBAH] Item "Pengaturan Aplikasi" dihapus dari sini
+            }
+
+            // [BARU] Group: Pengaturan Aplikasi
+            ProfileGroupCard(title = "Pengaturan Aplikasi") {
+                ProfileOptionItem(
+                    icon = Icons.Default.Category,
+                    title = "Atur Kategori",
+                    color = Color(0xFFE91E63) // Warna Pink/Ungu biar beda
+                ) {
+                    onNavigateToCategory() // Panggil navigasi saat diklik
+                }
             }
 
             // Group: Info
@@ -189,6 +198,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(80.dp))
     }
 
+    // Dialog Hapus Akun (Sama seperti sebelumnya)
     if (showDeleteDialog) {
         val isLoading = deleteState is ProfileViewModel.UiState.Loading
 

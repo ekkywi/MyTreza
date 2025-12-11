@@ -83,7 +83,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
 
     // Icon Library
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.material:material-icons-extended:1.7.6")
 
     // Vico Chart for Jetpack Compose
     implementation("com.patrykandpatrick.vico:compose:1.14.0")

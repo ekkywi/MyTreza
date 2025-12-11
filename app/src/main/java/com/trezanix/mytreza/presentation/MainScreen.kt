@@ -36,6 +36,9 @@ import com.trezanix.mytreza.presentation.features.wallet.WalletScreen
 import com.trezanix.mytreza.presentation.navigation.BottomNavItem
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.domain.model.Transaction
+import com.trezanix.mytreza.presentation.features.category.ManageCategoryScreen
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.runtime.getValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,94 +50,117 @@ fun MainScreen(
     onNavigateToEditTransaction: (Transaction) -> Unit
 ) {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
     var showBottomSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
 
+    //  1. DAFTAR RUTE YANG BOLEH ADA BOTTOM BAR
+    val bottomBarRoutes = listOf(
+        BottomNavItem.Home.route,
+        BottomNavItem.Analysis.route,
+        BottomNavItem.Wallet.route,
+        BottomNavItem.Profile.route
+    )
+
+    //  2. LOGIC PENENTU: Apakah Bottom Bar harus muncul?
+    val showBottomBar = currentRoute in bottomBarRoutes
+
     Scaffold(
         bottomBar = {
-            Surface(
-                color = Color.White,
-                shadowElevation = 16.dp,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            if (showBottomBar) {
+                Surface(
+                    color = Color.White,
+                    shadowElevation = 16.dp,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentRoute = navBackStackEntry?.destination?.route
-
-                    BottomMenuItem(
-                        icon = Icons.Default.Home,
-                        label = "Beranda",
-                        isSelected = currentRoute == BottomNavItem.Home.route,
-                        onClick = {
-                            navController.navigate(BottomNavItem.Home.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
-
-                    BottomMenuItem(
-                        icon = Icons.Default.PieChart,
-                        label = "Analisis",
-                        isSelected = currentRoute == BottomNavItem.Analysis.route,
-                        onClick = {
-                            navController.navigate(BottomNavItem.Analysis.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
-
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(BrandBlue)
-                            .clickable { showBottomSheet = true },
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Tambah",
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentRoute = navBackStackEntry?.destination?.route
+
+                        BottomMenuItem(
+                            icon = Icons.Default.Home,
+                            label = "Beranda",
+                            isSelected = currentRoute == BottomNavItem.Home.route,
+                            onClick = {
+                                navController.navigate(BottomNavItem.Home.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+
+                        BottomMenuItem(
+                            icon = Icons.Default.PieChart,
+                            label = "Analisis",
+                            isSelected = currentRoute == BottomNavItem.Analysis.route,
+                            onClick = {
+                                navController.navigate(BottomNavItem.Analysis.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(BrandBlue)
+                                .clickable { showBottomSheet = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Tambah",
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+
+                        BottomMenuItem(
+                            icon = Icons.Default.Wallet,
+                            label = "Dompet",
+                            isSelected = currentRoute == BottomNavItem.Wallet.route,
+                            onClick = {
+                                navController.navigate(BottomNavItem.Wallet.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+
+                        BottomMenuItem(
+                            icon = Icons.Default.Person,
+                            label = "Profil",
+                            isSelected = currentRoute == BottomNavItem.Profile.route,
+                            onClick = {
+                                navController.navigate(BottomNavItem.Profile.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
                         )
                     }
-
-                    BottomMenuItem(
-                        icon = Icons.Default.Wallet,
-                        label = "Dompet",
-                        isSelected = currentRoute == BottomNavItem.Wallet.route,
-                        onClick = {
-                            navController.navigate(BottomNavItem.Wallet.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
-
-                    BottomMenuItem(
-                        icon = Icons.Default.Person,
-                        label = "Profil",
-                        isSelected = currentRoute == BottomNavItem.Profile.route,
-                        onClick = {
-                            navController.navigate(BottomNavItem.Profile.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
                 }
             }
         }
@@ -159,7 +185,15 @@ fun MainScreen(
             }
 
             composable(BottomNavItem.Profile.route) {
-                ProfileScreen(onLogout = onNavigateToLogin)
+                ProfileScreen(
+                    onLogout = onNavigateToLogin,
+                    onNavigateToCategory = { navController.navigate("manage_category") }
+                )
+            }
+            composable("manage_category") {
+                ManageCategoryScreen(
+                    onNavigateUp = { navController.popBackStack() }
+                )
             }
         }
 
