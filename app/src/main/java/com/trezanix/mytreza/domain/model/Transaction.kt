@@ -10,5 +10,6 @@ data class Transaction(
     val walletName: String,
     val categoryId: String? = null,
     val walletId: String? = null,
-    val categoryIcon: String? = null
+    val categoryIcon: String? = null,
+    val categoryColor: String? = null
 )

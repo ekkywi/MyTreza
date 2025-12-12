@@ -240,7 +240,8 @@ fun TransactionDto.toDomain(): Transaction {
         walletName = this.wallet?.name ?: "Dompet",
         categoryId = this.categoryId,
         walletId = this.walletId,
-        categoryIcon = this.category?.icon
+        categoryIcon = this.category?.icon,
+        categoryColor = this.category?.color
     )
 }
 
@@ -334,13 +335,23 @@ fun TransactionItem(transaction: TransactionDto) {
     val isTransfer = transaction.category?.name?.contains("Transfer", true) == true
     
     // Dynamic Icon Logic
+    // Dynamic Icon Logic
     val categoryIconName = transaction.category?.icon
+    val categoryColorHex = transaction.category?.color
+    
     val databaseIcon = if (categoryIconName != null) getCategoryIcon(categoryIconName) else null
     val displayIcon = databaseIcon ?: (if (isTransfer) Icons.Default.SwapHoriz else icon)
 
+    // Dynamic Color Logic
+    val displayColor = try {
+        if (categoryColorHex != null) Color(android.graphics.Color.parseColor(categoryColorHex)) else amountColor
+    } catch (e: Exception) { amountColor }
+    
+    val displayBgColor = if (categoryColorHex != null) displayColor.copy(alpha = 0.1f) else iconBgColor
+
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).background(Color.White, RoundedCornerShape(16.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(iconBgColor), contentAlignment = Alignment.Center) {
-            Icon(displayIcon, null, tint = amountColor, modifier = Modifier.size(24.dp))
+        Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(displayBgColor), contentAlignment = Alignment.Center) {
+            Icon(displayIcon, null, tint = displayColor, modifier = Modifier.size(24.dp))
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {

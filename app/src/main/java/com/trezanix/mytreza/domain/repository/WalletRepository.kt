@@ -68,8 +68,4 @@ interface WalletRepository {
     ): Result<Transaction>
 
     suspend fun getTransactionById(id: String): Result<Transaction>
-
-    suspend fun getCategories(): Result<List<Category>>
-
-    suspend fun createCategory(name: String, type: String, icon: String, color: String): Result<Boolean>
 }

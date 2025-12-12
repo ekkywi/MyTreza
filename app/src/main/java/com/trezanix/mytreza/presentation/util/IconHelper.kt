@@ -3,32 +3,109 @@ package com.trezanix.mytreza.presentation.util
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 // 1. DAFTAR PILIHAN ICON (Strict Map)
 // Dipakai untuk Grid Picker & Pencarian Cepat
 object CategoryIcons {
     val map = mapOf(
+        // Food & Drink
         "fastfood" to Icons.Rounded.Fastfood,
         "restaurant" to Icons.Rounded.Restaurant,
         "cafe" to Icons.Rounded.LocalCafe,
+        "bar" to Icons.Rounded.LocalBar,
+        "dining" to Icons.Rounded.LocalDining,
+        "pizza" to Icons.Rounded.LocalPizza,
+        "bakery" to Icons.Rounded.BakeryDining,
+        "icecream" to Icons.Rounded.Icecream,
+        
+        // Shopping & Groceries
         "shopping" to Icons.Rounded.ShoppingBag,
         "cart" to Icons.Rounded.ShoppingCart,
-        "car" to Icons.Rounded.DirectionsCar,
-        "flight" to Icons.Rounded.Flight,
-        "home" to Icons.Rounded.Home,
-        "salary" to Icons.Rounded.Work,
-        "gift" to Icons.Rounded.CardGiftcard,
-        "savings" to Icons.Rounded.Savings, // Pastikan dependency material-icons-extended ada
-        "health" to Icons.Rounded.LocalHospital,
-        "school" to Icons.Rounded.School,
-        "sport" to Icons.Rounded.SportsSoccer,
-        "movie" to Icons.Rounded.Movie,
-        "receipt" to Icons.Rounded.Receipt,
-        "phone" to Icons.Rounded.PhoneAndroid,
-        "computer" to Icons.Rounded.Computer,
         "store" to Icons.Rounded.Store,
-        "transfer" to Icons.Rounded.SwapHoriz,
+        "grocery" to Icons.Rounded.LocalGroceryStore,
+        "gift" to Icons.Rounded.CardGiftcard,
+        
+        // Transport
+        "car" to Icons.Rounded.DirectionsCar,
+        "motorcycle" to Icons.Rounded.TwoWheeler,
+        "bus" to Icons.Rounded.DirectionsBus,
+        "train" to Icons.Rounded.DirectionsSubway,
+        "flight" to Icons.Rounded.Flight,
+        "taxi" to Icons.Rounded.LocalTaxi,
+        "gas" to Icons.Rounded.LocalGasStation,
+        "parking" to Icons.Rounded.LocalParking,
+        
+        // Home & Utilities
+        "home" to Icons.Rounded.Home,
+        "apartment" to Icons.Rounded.Apartment,
+        "electricity" to Icons.Rounded.ElectricBolt,
+        "water" to Icons.Rounded.WaterDrop,
+        "internet" to Icons.Rounded.Wifi,
+        "phone" to Icons.Rounded.PhoneAndroid,
+        "tv" to Icons.Rounded.Tv,
+        "furniture" to Icons.Rounded.Chair,
+        "repair" to Icons.Rounded.Build,
+        
+        // Finance & Work
+        "salary" to Icons.Rounded.Work,
+        "savings" to Icons.Rounded.Savings,
+        "bank" to Icons.Rounded.AccountBalance,
+        "wallet" to Icons.Rounded.AccountBalanceWallet,
+        "money" to Icons.Rounded.AttachMoney,
+        "investment" to Icons.AutoMirrored.Rounded.TrendingUp,
+        "receipt" to Icons.Rounded.Receipt,
+        "chart" to Icons.Rounded.InsertChart,
+        "credit_card" to Icons.Rounded.CreditCard,
+
+        // Aliases / Seed Data Support
+        "medical" to Icons.Rounded.LocalHospital,
+        "work" to Icons.Rounded.Work,
+        "laptop" to Icons.Rounded.Computer, // Mapping 'laptop' to Computer if Laptop is unavailable
+        "sell" to Icons.Rounded.Sell,
+        "swap_horiz" to Icons.Rounded.SwapHoriz,
+        "send" to Icons.AutoMirrored.Rounded.Send,
+        "more_horiz" to Icons.Rounded.MoreHoriz,
+        
+        // Health & Education
+        "health" to Icons.Rounded.LocalHospital,
+        "medicine" to Icons.Rounded.Medication,
+        "doctor" to Icons.Rounded.Person,
+        "school" to Icons.Rounded.School,
+        "book" to Icons.AutoMirrored.Rounded.MenuBook,
+        "science" to Icons.Rounded.Science,
+        
+        // Entertainment & Leisure
+        "movie" to Icons.Rounded.Movie,
+        "music" to Icons.Rounded.MusicNote,
+        "game" to Icons.Rounded.SportsEsports,
+        "ticket" to Icons.Rounded.LocalActivity,
+        "camera" to Icons.Rounded.PhotoCamera,
+        "park" to Icons.Rounded.Park,
+        "beach" to Icons.Rounded.BeachAccess,
+        "hotel" to Icons.Rounded.Hotel,
+        
+        // Sports
+        "sport" to Icons.Rounded.SportsSoccer,
+        "gym" to Icons.Rounded.FitnessCenter,
+        "pool" to Icons.Rounded.Pool,
+        "bike" to Icons.Rounded.PedalBike,
+        "run" to Icons.AutoMirrored.Rounded.DirectionsRun,
+        
+        // Electronics
+        "computer" to Icons.Rounded.Computer,
+        "smartphone" to Icons.Rounded.Smartphone,
+        "watch" to Icons.Rounded.Watch,
+        "headset" to Icons.Rounded.Headset,
+        
+        // Others
+        "family" to Icons.Rounded.FamilyRestroom,
+        "pet" to Icons.Rounded.Pets,
+        "baby" to Icons.Rounded.ChildCare,
+        "clothes" to Icons.Rounded.Checkroom,
+        "laundry" to Icons.Rounded.LocalLaundryService,
+        "more_horiz" to Icons.Rounded.MoreHoriz,
         "other" to Icons.Rounded.Category
     )
 
@@ -47,36 +124,10 @@ object CategoryColors {
     )
 }
 
-// 3. FUNGSI GET ICON (Hybrid Logic: Strict + Fallback)
+// 3. FUNGSI GET ICON (Strict Logic Only)
 fun getCategoryIcon(iconName: String?): ImageVector {
     if (iconName == null) return Icons.Rounded.Category
-
-    // LANGKAH A: Cek apakah iconName ada di map strict kita? (Eksplisit)
-    val strictIcon = CategoryIcons.map[iconName]
-    if (strictIcon != null) {
-        return strictIcon
-    }
-
-    // LANGKAH B: Jika tidak ketemu (data lama/manual string), pakai logika "Tebak-tebakan"
-    val name = iconName.lowercase().trim()
-
-    return when {
-        name.contains("food") || name.contains("makan") || name.contains("resto") -> Icons.Rounded.Restaurant
-        name.contains("drink") || name.contains("minum") || name.contains("cafe") || name.contains("kopi") -> Icons.Rounded.LocalCafe
-        name.contains("shop") || name.contains("belanja") || name.contains("mall") -> Icons.Rounded.ShoppingBag
-        name.contains("transport") || name.contains("kendara") || name.contains("car") || name.contains("mobil") || name.contains("gojek") || name.contains("grab") -> Icons.Rounded.DirectionsCar
-        name.contains("salary") || name.contains("gaji") || name.contains("income") || name.contains("masuk") || name.contains("work") -> Icons.Rounded.Work
-        name.contains("gift") || name.contains("hadiah") || name.contains("kado") -> Icons.Rounded.CardGiftcard
-        name.contains("health") || name.contains("sehat") || name.contains("medis") || name.contains("obat") -> Icons.Rounded.LocalHospital
-        name.contains("school") || name.contains("sekolah") || name.contains("kuliah") -> Icons.Rounded.School
-        name.contains("sport") || name.contains("olahraga") || name.contains("gym") -> Icons.Rounded.SportsSoccer
-        name.contains("enter") || name.contains("hibur") || name.contains("movie") || name.contains("film") -> Icons.Rounded.Movie
-        name.contains("bill") || name.contains("tagihan") || name.contains("listrik") -> Icons.Rounded.Receipt
-        name.contains("transfer") || name.contains("kirim") -> Icons.Rounded.SwapHoriz
-        name.contains("topup") || name.contains("isi") -> Icons.Rounded.AccountBalanceWallet
-        name.contains("fami") || name.contains("keluar") || name.contains("home") -> Icons.Rounded.Home
-        name.contains("travel") || name.contains("libur") || name.contains("wisata") -> Icons.Rounded.Flight
-        name.contains("phone") || name.contains("hp") || name.contains("pulsa") -> Icons.Rounded.PhoneAndroid
-        else -> Icons.Rounded.Category
-    }
+    
+    // Strict lookup only. No guessing.
+    return CategoryIcons.map[iconName] ?: Icons.Rounded.Category
 }

@@ -3,9 +3,8 @@ package com.trezanix.mytreza.presentation.features.category
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.trezanix.mytreza.domain.model.Category
-import com.trezanix.mytreza.domain.repository.WalletRepository
+import com.trezanix.mytreza.domain.repository.CategoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -14,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CategoryViewModel @Inject constructor(
-    private val repository: WalletRepository
+    private val repository: CategoryRepository
 ) : ViewModel() {
 
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
@@ -44,44 +43,45 @@ class CategoryViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
 
-            // --- MULAI SIMULASI (Mocking) ---
-            // Karena kita belum buat endpoint createCategory di Backend/Repo,
-            // kita pura-pura sukses dulu agar UI bisa dites.
+            repository.createCategory(name, type, icon, color)
+                .onSuccess {
+                    loadCategories()
+                    onSuccess()
+                }
+                .onFailure {
+                    // Handle error
+                }
 
-            delay(1000) // Pura-pura loading 1 detik
+            _isLoading.value = false
+        }
+    }
 
-            // Tambahkan kategori baru ke list lokal sementara biar kelihatan update
-            val newCategory = Category(
-                id = UUID.randomUUID().toString(),
-                name = name,
-                type = type,
-                icon = icon,
-                color = color,
-                userId = "temp",
-                createdAt = ""
-            )
+    fun updateCategory(id: String, name: String, type: String, icon: String, color: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.updateCategory(id, name, type, icon, color)
+                .onSuccess {
+                    loadCategories()
+                    onSuccess()
+                }
+                .onFailure {
+                    // Handle error
+                }
+            _isLoading.value = false
+        }
+    }
 
-            // Update state lokal
-            val currentList = _categories.value.toMutableList()
-            currentList.add(newCategory)
-            _categories.value = currentList
-
-            onSuccess()
-            // --- SELESAI SIMULASI ---
-
-            /* NANTI: Kalau Backend sudah siap, hapus blok simulasi di atas
-               dan uncomment kode di bawah ini:
-
-               repository.createCategory(name, type, icon, color)
-                   .onSuccess {
-                       loadCategories() // Reload dari server
-                       onSuccess()
-                   }
-                   .onFailure {
-                       // Show error toast
-                   }
-            */
-
+    fun deleteCategory(id: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.deleteCategory(id)
+                .onSuccess {
+                    loadCategories()
+                    onSuccess()
+                }
+                .onFailure {
+                    // Handle error
+                }
             _isLoading.value = false
         }
     }

@@ -7,5 +7,7 @@ data class CategoryDto(
     val name: String,
     val type: String,
     @SerializedName("icon")
-    val icon: String? = null
+    val icon: String? = null,
+    val color: String? = null,
+    val userId: String? = null
 )

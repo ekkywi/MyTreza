@@ -3,6 +3,7 @@ package com.trezanix.mytreza.data.remote.api
 import com.trezanix.mytreza.data.remote.dto.AuthData
 import com.trezanix.mytreza.data.remote.dto.BaseResponse
 import com.trezanix.mytreza.data.remote.dto.CategoryDto
+import com.trezanix.mytreza.data.remote.dto.CreateCategoryRequest
 import com.trezanix.mytreza.data.remote.dto.CreateTransactionRequest
 import com.trezanix.mytreza.data.remote.dto.CreateTransferRequest
 import com.trezanix.mytreza.data.remote.dto.CreateWalletRequest
@@ -109,4 +110,16 @@ interface MyTrezaApiService {
 
     @GET("categories")
     suspend fun getCategories(): Response<BaseResponse<List<CategoryDto>>>
+
+    @POST("categories")
+    suspend fun createCategory(@Body request: CreateCategoryRequest): Response<BaseResponse<CategoryDto>>
+
+    @PUT("categories/{id}")
+    suspend fun updateCategory(
+        @Path("id") id: String,
+        @Body request: CreateCategoryRequest
+    ): Response<BaseResponse<CategoryDto>>
+
+    @DELETE("categories/{id}")
+    suspend fun deleteCategory(@Path("id") id: String): Response<BaseResponse<Any>>
 }

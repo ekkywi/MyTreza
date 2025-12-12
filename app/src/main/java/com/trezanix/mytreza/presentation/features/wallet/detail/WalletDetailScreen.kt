@@ -324,14 +324,22 @@ fun TransactionItemAesthetic(trx: Transaction) { // PENTING: Tipe datanya Transa
     val isTransfer = trx.categoryName.contains("Transfer", true)
     
     // Prioritaskan icon dari database jika ada
+    // Prioritaskan icon dari database jika ada
     val databaseIcon = if (trx.categoryIcon != null) getCategoryIcon(trx.categoryIcon) else null
     
     // Fallback logic
     val displayIcon = databaseIcon ?: (if (isTransfer) Icons.Default.SwapHoriz else icon)
 
+    // Dynamic Color Logic
+    val displayColor = try {
+        if (trx.categoryColor != null) Color(android.graphics.Color.parseColor(trx.categoryColor)) else amountColor
+    } catch (e: Exception) { amountColor }
+
+    val displayBgColor = if (trx.categoryColor != null) displayColor.copy(alpha = 0.1f) else iconBgColor
+
     Row(modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(16.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(iconBgColor), contentAlignment = Alignment.Center) {
-            Icon(imageVector = displayIcon, contentDescription = null, tint = amountColor, modifier = Modifier.size(24.dp))
+        Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(displayBgColor), contentAlignment = Alignment.Center) {
+            Icon(imageVector = displayIcon, contentDescription = null, tint = displayColor, modifier = Modifier.size(24.dp))
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {

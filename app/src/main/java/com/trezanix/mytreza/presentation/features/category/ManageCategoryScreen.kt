@@ -37,6 +37,9 @@ import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.presentation.util.CategoryColors
 import com.trezanix.mytreza.presentation.util.CategoryIcons
 import com.trezanix.mytreza.presentation.util.getCategoryIcon
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +54,10 @@ fun ManageCategoryScreen(
     var showAddDialog by remember { mutableStateOf(false) }
 
     val filteredList = categories.filter { it.type == selectedTab }
+
+    // State for Dialogs
+    var showEditDialog by remember { mutableStateOf<Category?>(null) }
+    var showDeleteDialog by remember { mutableStateOf<Category?>(null) }
 
     Scaffold(
         topBar = {
@@ -70,12 +77,14 @@ fun ManageCategoryScreen(
                 containerColor = BrandBlue,
                 contentColor = Color.White,
                 shape = CircleShape,
-                modifier = Modifier.size(64.dp).shadow(12.dp, CircleShape, spotColor = BrandBlue.copy(alpha = 0.4f))
+                modifier = Modifier
+                    .size(64.dp)
+                    .shadow(12.dp, CircleShape, spotColor = BrandBlue.copy(alpha = 0.4f))
             ) {
                 Icon(Icons.Default.Add, null, modifier = Modifier.size(32.dp))
             }
         },
-        containerColor = Color(0xFFF5F7FA) // Background Abu-abu Modern
+        containerColor = Color(0xFFF5F7FA)
     ) { padding ->
         Column(
             modifier = Modifier
@@ -84,7 +93,6 @@ fun ManageCategoryScreen(
         ) {
 
             // 1. MODERN SEGMENTED TABS
-            // Pengganti FilterChip agar lebih premium
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -124,7 +132,16 @@ fun ManageCategoryScreen(
                         }
                     } else {
                         items(filteredList) { category ->
-                            ModernCategoryCard(category)
+                            val isSystemCategory = category.userId == null
+                            ModernCategoryCard(
+                                category = category,
+                                isSystemCategory = isSystemCategory,
+                                onClick = { 
+                                    if (!isSystemCategory) {
+                                        showEditDialog = category 
+                                    }
+                                }
+                            )
                         }
                     }
                 }
@@ -132,6 +149,9 @@ fun ManageCategoryScreen(
         }
     }
 
+    // --- DIALOGS ---
+
+    // 1. Add Dialog
     if (showAddDialog) {
         AddCategoryDialog(
             initialType = selectedTab,
@@ -141,6 +161,54 @@ fun ManageCategoryScreen(
                     showAddDialog = false
                 }
             }
+        )
+    }
+
+    // 2. Edit Dialog (Reusing AddCategoryDialog with initial values)
+    showEditDialog?.let { category ->
+        AddCategoryDialog(
+            initialType = category.type,
+            initialName = category.name,
+            initialIcon = category.icon ?: "category",
+            initialColor = category.color ?: "#000000",
+            isEditMode = true,
+            onDismiss = { showEditDialog = null },
+            onSave = { name, type, icon, color ->
+                viewModel.updateCategory(category.id, name, type, icon, color) {
+                    showEditDialog = null
+                }
+            },
+            onDelete = {
+                showEditDialog = null
+                showDeleteDialog = category
+            }
+        )
+    }
+
+    // 3. Delete Confirmation Dialog
+    showDeleteDialog?.let { category ->
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = null },
+            title = { Text("Hapus Kategori?") },
+            text = { Text("Apakah Anda yakin ingin menghapus kategori '${category.name}'? Transaksi yang menggunakan kategori ini mungkin akan kehilangan referensinya.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteCategory(category.id) {
+                            showDeleteDialog = null
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                ) {
+                    Text("Hapus")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = null }) {
+                    Text("Batal")
+                }
+            },
+            containerColor = Color.White
         )
     }
 }
@@ -183,8 +251,14 @@ fun ModernTabItem(
     }
 }
 
+
+
 @Composable
-fun ModernCategoryCard(category: Category) {
+fun ModernCategoryCard(
+    category: Category,
+    isSystemCategory: Boolean,
+    onClick: () -> Unit
+) {
     val parsedColor = try { Color(android.graphics.Color.parseColor(category.color ?: "#CCCCCC")) } catch (e: Exception) { Color.Gray }
 
     Card(
@@ -192,12 +266,12 @@ fun ModernCategoryCard(category: Category) {
             .fillMaxWidth()
             .shadow(4.dp, RoundedCornerShape(16.dp), spotColor = Color.LightGray.copy(alpha = 0.3f)),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(0.dp) // Kita pakai shadow custom di modifier
+        colors = CardDefaults.cardColors(containerColor = if (isSystemCategory) Color(0xFFFAFAFA) else Color.White),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
             modifier = Modifier
-                .clickable { /* Edit logic here */ }
+                .then(if (!isSystemCategory) Modifier.clickable { onClick() } else Modifier)
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -228,13 +302,25 @@ fun ModernCategoryCard(category: Category) {
                 modifier = Modifier.weight(1f)
             )
 
-            // Chevron Arrow (Opsional, memberi kesan bisa diklik)
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                contentDescription = null,
-                tint = Color.LightGray,
-                modifier = Modifier.size(14.dp)
-            )
+            // Actions: Edit (Implicit via click) and Delete
+            
+            if (!isSystemCategory) {
+                // Chevron Arrow
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit",
+                    tint = Color.LightGray,
+                    modifier = Modifier.size(16.dp)
+                )
+            } else {
+                // Lock Icon for System Category
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "System Category",
+                    tint = Color.LightGray.copy(alpha = 0.5f),
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }
@@ -263,12 +349,17 @@ fun EmptyStateView() {
 @Composable
 fun AddCategoryDialog(
     initialType: String,
+    initialName: String = "",
+    initialIcon: String = "fastfood",
+    initialColor: String = "#F44336",
+    isEditMode: Boolean = false,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, String) -> Unit
+    onSave: (String, String, String, String) -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
-    var name by remember { mutableStateOf("") }
-    var selectedIcon by remember { mutableStateOf("fastfood") }
-    var selectedColor by remember { mutableStateOf("#F44336") }
+    var name by remember { mutableStateOf(initialName) }
+    var selectedIcon by remember { mutableStateOf(initialIcon) }
+    var selectedColor by remember { mutableStateOf(initialColor) }
 
     // Step: 0=Name, 1=Icon, 2=Color
     var step by remember { mutableIntStateOf(0) }
@@ -287,13 +378,32 @@ fun AddCategoryDialog(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+            
+            // Delete Icon in Top Right if in Edit Mode
+            if (isEditMode && onDelete != null) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Hapus Kategori",
+                            tint = Color.Red
+                        )
+                    }
+                }
+            }
         },
         text = {
             Box(modifier = Modifier.height(IntrinsicSize.Min)) {
                 when (step) {
                     0 -> {
                         Column {
-                            Text("Buat kategori $initialType baru", style = MaterialTheme.typography.bodySmall, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                            Text(
+                                if(isEditMode) "Edit kategori $initialType" else "Buat kategori $initialType baru", 
+                                style = MaterialTheme.typography.bodySmall, 
+                                color = Color.Gray, 
+                                textAlign = TextAlign.Center, 
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             Spacer(modifier = Modifier.height(24.dp))
                             OutlinedTextField(
                                 value = name,
@@ -316,7 +426,7 @@ fun AddCategoryDialog(
                                 items(CategoryIcons.iconKeys) { iconKey ->
                                     val isSelected = selectedIcon == iconKey
                                     IconButton(
-                                        onClick = { selectedIcon = iconKey; step = 2 },
+                                        onClick = { selectedIcon = iconKey }, // Removed: ; step = 2
                                         modifier = Modifier.padding(4.dp)
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -394,7 +504,7 @@ fun AddCategoryDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (step == 0) step = 1 else if (step == 2) onSave(name, initialType, selectedIcon, selectedColor)
+                    if (step == 0 || step == 1) step += 1 else if (step == 2) onSave(name, initialType, selectedIcon, selectedColor)
                 },
                 enabled = if(step==0) name.isNotBlank() else true,
                 colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
