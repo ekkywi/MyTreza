@@ -37,6 +37,7 @@ import com.trezanix.mytreza.presentation.navigation.BottomNavItem
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.domain.model.Transaction
 import com.trezanix.mytreza.presentation.features.category.ManageCategoryScreen
+import com.trezanix.mytreza.presentation.features.history.HistoryScreen
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.runtime.getValue
 
@@ -171,7 +172,17 @@ fun MainScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(BottomNavItem.Home.route) { 
-                DashboardScreen(onNavigateToEditTransaction = onNavigateToEditTransaction) 
+                DashboardScreen(
+                    onNavigateToEditTransaction = onNavigateToEditTransaction,
+                    onNavigateToHistory = { navController.navigate("history") }
+                ) 
+            }
+
+            composable("history") {
+                HistoryScreen(
+                    onNavigateUp = { navController.popBackStack() },
+                    onNavigateToDetail = onNavigateToEditTransaction
+                )
             }
 
             composable(BottomNavItem.Analysis.route) {

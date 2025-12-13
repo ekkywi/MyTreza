@@ -2,8 +2,10 @@ package com.trezanix.mytreza.core.di
 
 import com.trezanix.mytreza.data.repository.AuthRepositoryImpl
 import com.trezanix.mytreza.data.repository.DashboardRepositoryImpl
+import com.trezanix.mytreza.data.repository.TransactionRepositoryImpl
 import com.trezanix.mytreza.domain.repository.AuthRepository
 import com.trezanix.mytreza.domain.repository.DashboardRepository
+import com.trezanix.mytreza.domain.repository.TransactionRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -37,4 +39,10 @@ abstract class RepositoryModule {
     abstract fun bindCategoryRepository(
         categoryRepositoryImpl: com.trezanix.mytreza.data.repository.CategoryRepositoryImpl
     ): com.trezanix.mytreza.domain.repository.CategoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTransactionRepository(
+        transactionRepositoryImpl: TransactionRepositoryImpl
+    ): TransactionRepository
 }

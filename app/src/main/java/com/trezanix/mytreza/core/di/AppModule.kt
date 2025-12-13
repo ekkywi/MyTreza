@@ -7,6 +7,7 @@ import com.trezanix.mytreza.data.repository.WalletRepositoryImpl
 import com.trezanix.mytreza.domain.repository.WalletRepository
 import com.trezanix.mytreza.data.repository.UserRepositoryImpl
 import com.trezanix.mytreza.domain.repository.UserRepository
+
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -56,4 +57,6 @@ object AppModule {
     fun provideUserRepository(api: MyTrezaApiService): UserRepository {
         return UserRepositoryImpl(api)
     }
+
+
 }

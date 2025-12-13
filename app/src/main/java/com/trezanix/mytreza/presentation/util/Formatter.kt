@@ -21,3 +21,26 @@ fun getGreetingMessage(): String {
         else -> "Selamat Malam,"
     }
 }
+
+fun formatDateHeader(dateString: String): String {
+    try {
+        val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        val date = parser.parse(dateString) ?: return dateString
+
+        val now = Calendar.getInstance()
+        val check = Calendar.getInstance()
+        check.time = date
+
+        return when {
+            now.get(Calendar.YEAR) == check.get(Calendar.YEAR) &&
+            now.get(Calendar.DAY_OF_YEAR) == check.get(Calendar.DAY_OF_YEAR) -> "Hari Ini"
+
+            now.get(Calendar.YEAR) == check.get(Calendar.YEAR) &&
+            now.get(Calendar.DAY_OF_YEAR) - check.get(Calendar.DAY_OF_YEAR) == 1 -> "Kemarin"
+
+            else -> java.text.SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(date)
+        }
+    } catch (e: Exception) {
+        return dateString
+    }
+}

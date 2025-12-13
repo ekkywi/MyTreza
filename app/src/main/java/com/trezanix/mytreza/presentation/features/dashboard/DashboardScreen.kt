@@ -30,10 +30,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-
+import com.trezanix.mytreza.presentation.components.TransactionItem
 import com.trezanix.mytreza.data.remote.dto.TransactionDto
 import com.trezanix.mytreza.domain.model.Transaction
-import com.trezanix.mytreza.presentation.features.transaction.detail.TransactionDetailSheet // Pastikan import ini ada
+import com.trezanix.mytreza.presentation.features.transaction.detail.TransactionDetailSheet
 import com.trezanix.mytreza.presentation.theme.AccentGreen
 import com.trezanix.mytreza.presentation.theme.AccentRed
 import com.trezanix.mytreza.presentation.theme.BrandBlue
@@ -49,6 +49,7 @@ import com.trezanix.mytreza.presentation.util.getCategoryIcon
 @Composable
 fun DashboardScreen(
     onNavigateToEditTransaction: (Transaction) -> Unit,
+    onNavigateToHistory: () -> Unit,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     // --- STATE COLLECTORS ---
@@ -121,7 +122,9 @@ fun DashboardScreen(
                             .offset(y = (-30).dp)
                             .padding(horizontal = 24.dp)
                     ) {
-                        QuickActionsGrid()
+                        QuickActionsGrid(
+                            onNavigateToHistory = onNavigateToHistory
+                        )
                     }
                 }
 
@@ -145,7 +148,9 @@ fun DashboardScreen(
                             text = "Lihat Semua",
                             style = MaterialTheme.typography.labelMedium,
                             color = BrandBlue,
-                            modifier = Modifier.clickable { /* TODO: Navigate to History */ }
+                            modifier = Modifier.clickable {
+                                onNavigateToHistory()
+                            }
                         )
                     }
                 }
@@ -294,72 +299,37 @@ fun DashboardHeader(totalBalance: Double, isLoading: Boolean, userName: String) 
 }
 
 @Composable
-fun QuickActionsGrid() {
+fun QuickActionsGrid(
+    onNavigateToHistory: () -> Unit
+) {
     Card(modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp), spotColor = BrandBlue.copy(alpha = 0.1f)), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(0.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp, horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
             QuickActionItem(Icons.Default.QrCodeScanner, "Scan")
             QuickActionItem(Icons.Default.SwapHoriz, "Transfer")
-            QuickActionItem(Icons.Default.History, "Riwayat")
+            QuickActionItem(Icons.Default.History, "Riwayat", onClick = onNavigateToHistory)
             QuickActionItem(Icons.Default.MoreHoriz, "Lainnya")
         }
     }
 }
 
 @Composable
-fun QuickActionItem(icon: ImageVector, label: String) {
+fun QuickActionItem(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit = {}
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(modifier = Modifier.size(56.dp).background(Color(0xFFF5F7FA), CircleShape).clip(CircleShape).clickable { }, contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier
+            .size(56.dp)
+            .background(Color(0xFFF5F7FA), CircleShape)
+            .clip(CircleShape)
+            .clickable { onClick() },
+            contentAlignment = Alignment.Center
+        ) {
             Icon(icon, label, tint = BrandBlue, modifier = Modifier.size(26.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
-    }
-}
-
-@Composable
-fun TransactionItem(transaction: TransactionDto) {
-    val isExpense = transaction.type == "EXPENSE"
-    val amountColor = if (isExpense) AccentRed else AccentGreen
-    val iconBgColor = if (isExpense) Color(0xFFFFEBEE) else Color(0xFFE8F5E9)
-    val icon = if (isExpense) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward
-    val prefix = if (isExpense) "- " else "+ "
-
-    val dateReadable = try {
-        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-        val formatter = SimpleDateFormat("dd MMM, HH:mm", Locale("id", "ID"))
-        val parsed = parser.parse(transaction.date) ?: Date()
-        formatter.format(parsed)
-    } catch (e: Exception) { "-" }
-
-    val walletName = transaction.wallet?.name ?: "Dompet"
-    val isTransfer = transaction.category?.name?.contains("Transfer", true) == true
-    
-    // Dynamic Icon Logic
-    // Dynamic Icon Logic
-    val categoryIconName = transaction.category?.icon
-    val categoryColorHex = transaction.category?.color
-    
-    val databaseIcon = if (categoryIconName != null) getCategoryIcon(categoryIconName) else null
-    val displayIcon = databaseIcon ?: (if (isTransfer) Icons.Default.SwapHoriz else icon)
-
-    // Dynamic Color Logic
-    val displayColor = try {
-        if (categoryColorHex != null) Color(android.graphics.Color.parseColor(categoryColorHex)) else amountColor
-    } catch (e: Exception) { amountColor }
-    
-    val displayBgColor = if (categoryColorHex != null) displayColor.copy(alpha = 0.1f) else iconBgColor
-
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp).background(Color.White, RoundedCornerShape(16.dp)).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(displayBgColor), contentAlignment = Alignment.Center) {
-            Icon(displayIcon, null, tint = displayColor, modifier = Modifier.size(24.dp))
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(transaction.category?.name ?: transaction.description ?: "Transaksi", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("$walletName • $dateReadable", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-        }
-        Text("$prefix${formatRupiah(transaction.amount)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = amountColor)
     }
 }
 
