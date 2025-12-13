@@ -62,7 +62,7 @@ object CategoryIcons {
         // Aliases / Seed Data Support
         "medical" to Icons.Rounded.LocalHospital,
         "work" to Icons.Rounded.Work,
-        "laptop" to Icons.Rounded.Computer, // Mapping 'laptop' to Computer if Laptop is unavailable
+        "laptop" to Icons.Rounded.Computer,
         "sell" to Icons.Rounded.Sell,
         "swap_horiz" to Icons.Rounded.SwapHoriz,
         "send" to Icons.AutoMirrored.Rounded.Send,

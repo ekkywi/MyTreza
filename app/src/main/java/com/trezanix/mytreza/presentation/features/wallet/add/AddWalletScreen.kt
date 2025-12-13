@@ -59,16 +59,7 @@ fun AddWalletScreen(
     val balance by viewModel.initialBalance.collectAsState()
     val colorHex by viewModel.selectedColor.collectAsState()
 
-    val colorPalette = listOf(
-        "#2196F3",
-        "#4CAF50",
-        "#FF9800",
-        "#E91E63",
-        "#9C27B0",
-        "#607D8B",
-        "#000000",
-        "#795548"
-    )
+    val colorPalette = com.trezanix.mytreza.presentation.util.WalletHelper.walletColors
 
     LaunchedEffect(uiState) {
         if (uiState is AddWalletViewModel.AddWalletUiState.Success) {
