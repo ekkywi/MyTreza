@@ -7,6 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -361,27 +363,21 @@ fun AddCategoryDialog(
     var selectedIcon by remember { mutableStateOf(initialIcon) }
     var selectedColor by remember { mutableStateOf(initialColor) }
 
-    // Step: 0=Name, 1=Icon, 2=Color
-    var step by remember { mutableIntStateOf(0) }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
         title = {
-            Text(
-                when(step) {
-                    0 -> "Nama Kategori"
-                    1 -> "Pilih Ikon"
-                    else -> "Pilih Warna"
-                },
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            // Delete Icon in Top Right if in Edit Mode
-            if (isEditMode && onDelete != null) {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    if (isEditMode) "Edit Kategori" else "Tambah Kategori",
+                    fontWeight = FontWeight.Bold
+                )
+                // Delete Icon in Top Right if in Edit Mode
+                if (isEditMode && onDelete != null) {
                     IconButton(onClick = onDelete) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -393,108 +389,76 @@ fun AddCategoryDialog(
             }
         },
         text = {
-            Box(modifier = Modifier.height(IntrinsicSize.Min)) {
-                when (step) {
-                    0 -> {
-                        Column {
-                            Text(
-                                if(isEditMode) "Edit kategori $initialType" else "Buat kategori $initialType baru", 
-                                style = MaterialTheme.typography.bodySmall, 
-                                color = Color.Gray, 
-                                textAlign = TextAlign.Center, 
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-                            OutlinedTextField(
-                                value = name,
-                                onValueChange = { name = it },
-                                label = { Text("Nama Kategori") },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = BrandBlue,
-                                    focusedContainerColor = Color.White,
-                                    unfocusedContainerColor = Color.White
-                                )
-                            )
-                        }
-                    }
-                    1 -> {
-                        Box(modifier = Modifier.height(300.dp)) {
-                            LazyVerticalGrid(columns = GridCells.Adaptive(56.dp)) {
-                                items(CategoryIcons.iconKeys) { iconKey ->
-                                    val isSelected = selectedIcon == iconKey
-                                    IconButton(
-                                        onClick = { selectedIcon = iconKey }, // Removed: ; step = 2
-                                        modifier = Modifier.padding(4.dp)
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Icon(
-                                                imageVector = getCategoryIcon(iconKey),
-                                                contentDescription = null,
-                                                tint = if (isSelected) BrandBlue else Color.Gray,
-                                                modifier = Modifier.size(28.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    2 -> {
-                        Column {
-                            // Live Preview
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 16.dp)
-                                    .background(Color(0xFFF5F7FA), RoundedCornerShape(12.dp))
-                                    .padding(12.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(android.graphics.Color.parseColor(selectedColor)).copy(alpha = 0.2f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = getCategoryIcon(selectedIcon),
-                                        contentDescription = null,
-                                        tint = Color(android.graphics.Color.parseColor(selectedColor)),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Text(if(name.isEmpty()) "Preview" else name, fontWeight = FontWeight.Bold)
-                            }
+            Column(
+                modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState())
+            ) {
+                // 1. Name Input
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nama Kategori") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BrandBlue,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
+                )
 
-                            Box(modifier = Modifier.height(250.dp)) {
-                                LazyVerticalGrid(columns = GridCells.Adaptive(48.dp)) {
-                                    items(CategoryColors.colors) { colorHex ->
-                                        val isSelected = selectedColor == colorHex
-                                        Box(
-                                            modifier = Modifier
-                                                .padding(6.dp)
-                                                .size(40.dp)
-                                                .clip(CircleShape)
-                                                .background(Color(android.graphics.Color.parseColor(colorHex)))
-                                                .clickable { selectedColor = colorHex }
-                                                .border(
-                                                    width = if (isSelected) 3.dp else 0.dp,
-                                                    color = if (isSelected) Color.Black.copy(alpha=0.5f) else Color.Transparent,
-                                                    shape = CircleShape
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            if (isSelected) {
-                                                Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                            }
-                                        }
-                                    }
-                                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2. Icon Picker
+                Text("Pilih Ikon", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(modifier = Modifier.height(180.dp).fillMaxWidth().border(1.dp, Color.LightGray.copy(alpha=0.3f), RoundedCornerShape(8.dp)).padding(4.dp)) {
+                    LazyVerticalGrid(columns = GridCells.Adaptive(48.dp)) {
+                        items(CategoryIcons.iconKeys) { iconKey ->
+                            val isSelected = selectedIcon == iconKey
+                            IconButton(
+                                onClick = { selectedIcon = iconKey },
+                                modifier = Modifier.padding(2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = getCategoryIcon(iconKey),
+                                    contentDescription = null,
+                                    tint = if (isSelected) BrandBlue else Color.Gray,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 3. Color Picker
+                Text("Pilih Warna", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(40.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.height(120.dp)
+                ) {
+                    items(CategoryColors.colors) { colorHex ->
+                        val isSelected = selectedColor == colorHex
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color(android.graphics.Color.parseColor(colorHex)))
+                                .clickable { selectedColor = colorHex }
+                                .border(
+                                    width = if (isSelected) 3.dp else 0.dp,
+                                    color = if (isSelected) Color.Black.copy(alpha = 0.5f) else Color.Transparent,
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(16.dp))
                             }
                         }
                     }
@@ -504,28 +468,23 @@ fun AddCategoryDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (step == 0 || step == 1) step += 1 else if (step == 2) onSave(name, initialType, selectedIcon, selectedColor)
+                    if (name.isNotBlank()) {
+                         onSave(name, initialType, selectedIcon, selectedColor)
+                    }
                 },
-                enabled = if(step==0) name.isNotBlank() else true,
+                enabled = name.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = BrandBlue),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(if (step == 2) "Simpan Kategori" else "Lanjut")
+                Text("Simpan")
             }
         },
         dismissButton = {
-            if (step > 0) {
-                TextButton(
-                    onClick = { step -= 1 },
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Kembali", color = Color.Gray) }
-            } else {
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Batal", color = Color.Gray) }
-            }
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Batal", color = Color.Gray) }
         }
     )
 }

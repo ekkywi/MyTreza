@@ -34,7 +34,7 @@ class CategoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun createCategory(name: String, type: String, icon: String, color: String): Result<Boolean> {
+    override suspend fun createCategory(name: String, type: String, icon: String, color: String): Result<Category> {
         return try {
             val request = CreateCategoryRequest(
                 name = name,
@@ -45,7 +45,12 @@ class CategoryRepositoryImpl @Inject constructor(
             val response = api.createCategory(request)
             
             if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(true)
+                val data = response.body()?.data
+                if (data != null) {
+                    Result.success(data.toDomain())
+                } else {
+                    Result.failure(Exception("Response body data is null"))
+                }
             } else {
                 Result.failure(Exception(response.message()))
             }
@@ -54,7 +59,7 @@ class CategoryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateCategory(id: String, name: String, type: String, icon: String, color: String): Result<Boolean> {
+    override suspend fun updateCategory(id: String, name: String, type: String, icon: String, color: String): Result<Category> {
         return try {
             val request = CreateCategoryRequest(
                 name = name,
@@ -65,7 +70,12 @@ class CategoryRepositoryImpl @Inject constructor(
             val response = api.updateCategory(id, request)
 
             if (response.isSuccessful && response.body()?.success == true) {
-                Result.success(true)
+                val data = response.body()?.data
+                if (data != null) {
+                    Result.success(data.toDomain())
+                } else {
+                    Result.failure(Exception("Response body data is null"))
+                }
             } else {
                 Result.failure(Exception(response.message()))
             }

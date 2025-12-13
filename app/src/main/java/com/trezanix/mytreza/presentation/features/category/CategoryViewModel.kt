@@ -44,8 +44,8 @@ class CategoryViewModel @Inject constructor(
             _isLoading.value = true
 
             repository.createCategory(name, type, icon, color)
-                .onSuccess {
-                    loadCategories()
+                .onSuccess { newCategory ->
+                    _categories.value += newCategory
                     onSuccess()
                 }
                 .onFailure {
@@ -60,8 +60,21 @@ class CategoryViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             repository.updateCategory(id, name, type, icon, color)
-                .onSuccess {
-                    loadCategories()
+                .onSuccess { 
+                    // Optimistically update with local values to ensure UI reflects user changes
+                    // even if backend return is stale
+                    _categories.value = _categories.value.map { category ->
+                         if (category.id == id) {
+                             category.copy(
+                                 name = name,
+                                 type = type,
+                                 icon = icon,
+                                 color = color
+                             )
+                         } else {
+                             category
+                         }
+                    }
                     onSuccess()
                 }
                 .onFailure {
