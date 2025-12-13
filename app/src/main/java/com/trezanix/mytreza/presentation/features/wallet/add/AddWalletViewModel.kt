@@ -19,7 +19,7 @@ class AddWalletViewModel @Inject constructor(
     var walletType = MutableStateFlow("BANK")
     var initialBalance = MutableStateFlow("")
     var selectedColor = MutableStateFlow("#2196F3")
-    var selectedIcon = MutableStateFlow("wallet_default")
+    var selectedIcon = MutableStateFlow("credit_card")
 
     private val _date = MutableStateFlow(Date())
     val date = _date.asStateFlow()

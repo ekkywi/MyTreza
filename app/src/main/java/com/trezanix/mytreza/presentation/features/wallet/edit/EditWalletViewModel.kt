@@ -20,7 +20,7 @@ class EditWalletViewModel @Inject constructor(
 
     var walletName = MutableStateFlow("")
     var selectedColor = MutableStateFlow("#2196F3")
-    var selectedIcon = MutableStateFlow("wallet_default")
+    var selectedIcon = MutableStateFlow("credit_card")
 
     var currentBalance = MutableStateFlow(0.0)
     var currentType = MutableStateFlow("BANK")

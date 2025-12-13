@@ -17,13 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalance
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.rounded.Apartment
-import androidx.compose.material.icons.rounded.AttachMoney
-import androidx.compose.material.icons.rounded.CreditCard
-import androidx.compose.material.icons.rounded.Group
-import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -43,6 +36,8 @@ import com.trezanix.mytreza.domain.model.Wallet
 import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.presentation.util.formatRupiah
 
+import com.trezanix.mytreza.presentation.util.getCategoryIcon
+
 @Composable
 fun WalletCard(wallet: Wallet, onClick: (() -> Unit)? = null) {
     val defaultColor = getDefaultColorByType(wallet.type)
@@ -59,16 +54,6 @@ fun WalletCard(wallet: Wallet, onClick: (() -> Unit)? = null) {
     val gradient = Brush.Companion.linearGradient(
         colors = listOf(baseColor, baseColor.copy(alpha = 0.8f))
     )
-
-    val icon = when (wallet.type.uppercase()) {
-        "CASH" -> Icons.Rounded.AttachMoney
-        "EWALLET" -> Icons.Rounded.AccountBalanceWallet
-        "BANK" -> Icons.Rounded.AccountBalance
-        "SAVING" -> Icons.Rounded.Star
-        "FAMILY" -> Icons.Rounded.Group
-        "ASSET" -> Icons.Rounded.Apartment
-        else -> Icons.Rounded.AccountBalance
-    }
 
     val modifier = Modifier.Companion
         .fillMaxWidth()
@@ -125,7 +110,7 @@ fun WalletCard(wallet: Wallet, onClick: (() -> Unit)? = null) {
                     verticalAlignment = Alignment.Companion.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.CreditCard, // Simbol Chip
+                        imageVector = getCategoryIcon(wallet.icon ?: "credit_card"),
                         contentDescription = null,
                         tint = androidx.compose.ui.graphics.Color.Companion.White.copy(alpha = 0.8f),
                         modifier = Modifier.Companion.size(36.dp)

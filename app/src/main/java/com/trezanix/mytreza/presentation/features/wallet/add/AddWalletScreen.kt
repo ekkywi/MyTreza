@@ -45,6 +45,12 @@ import com.trezanix.mytreza.presentation.theme.BrandBlue
 import com.trezanix.mytreza.presentation.util.mapTypeLabel
 import com.trezanix.mytreza.presentation.util.formatRupiah
 
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import com.trezanix.mytreza.presentation.util.CategoryIcons
+import com.trezanix.mytreza.presentation.util.getCategoryIcon
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWalletScreen(
@@ -58,8 +64,11 @@ fun AddWalletScreen(
     val type by viewModel.walletType.collectAsState()
     val balance by viewModel.initialBalance.collectAsState()
     val colorHex by viewModel.selectedColor.collectAsState()
+    val selectedIcon by viewModel.selectedIcon.collectAsState()
 
     val colorPalette = com.trezanix.mytreza.presentation.util.WalletHelper.walletColors
+
+    var showIconDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState) {
         if (uiState is AddWalletViewModel.AddWalletUiState.Success) {
@@ -69,6 +78,45 @@ fun AddWalletScreen(
         if (uiState is AddWalletViewModel.AddWalletUiState.Error) {
             Toast.makeText(context, (uiState as AddWalletViewModel.AddWalletUiState.Error).message, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    if (showIconDialog) {
+        AlertDialog(
+            onDismissRequest = { showIconDialog = false },
+            title = { Text("Pilih Ikon Dompet") },
+            text = {
+                Box(modifier = Modifier.height(300.dp).fillMaxWidth()) {
+                    LazyVerticalGrid(columns = GridCells.Adaptive(56.dp)) {
+                        items(CategoryIcons.iconKeys) { iconKey ->
+                            val isSelected = selectedIcon == iconKey
+                            IconButton(
+                                onClick = { 
+                                    viewModel.selectedIcon.value = iconKey 
+                                    showIconDialog = false
+                                },
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .border(if(isSelected) 2.dp else 0.dp, BrandBlue, CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = getCategoryIcon(iconKey),
+                                    contentDescription = null,
+                                    tint = if (isSelected) BrandBlue else Color.Gray,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showIconDialog = false }) {
+                    Text("Batal")
+                }
+            },
+            containerColor = Color.White
+        )
     }
 
     Scaffold(
@@ -104,7 +152,8 @@ fun AddWalletScreen(
                 name = if (name.isBlank()) "Nama Dompet" else name,
                 balance = balance.toDoubleOrNull() ?: 0.0,
                 type = type,
-                colorHex = colorHex
+                colorHex = colorHex,
+                iconKey = selectedIcon
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -153,6 +202,37 @@ fun AddWalletScreen(
                         ),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
+
+                    // Icon Selector Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("Ikon Dompet", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF5F7FA),
+                                modifier = Modifier.clickable { showIconDialog = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = getCategoryIcon(selectedIcon),
+                                        contentDescription = null,
+                                        tint = BrandBlue,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Ubah Ikon", color = BrandBlue, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        }
+                    }
 
                     // Type Selector
                     Column {
@@ -224,7 +304,7 @@ fun AddWalletScreen(
 
 
 @Composable
-fun LivePreviewCard(name: String, balance: Double, type: String, colorHex: String) {
+fun LivePreviewCard(name: String, balance: Double, type: String, colorHex: String, iconKey: String) {
     val cardColor = try {
         Color(android.graphics.Color.parseColor(colorHex))
     } catch (e: Exception) {
@@ -281,7 +361,7 @@ fun LivePreviewCard(name: String, balance: Double, type: String, colorHex: Strin
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.CreditCard,
+                        imageVector = getCategoryIcon(iconKey),
                         contentDescription = null,
                         tint = Color.White.copy(alpha = 0.9f),
                         modifier = Modifier.size(40.dp)
